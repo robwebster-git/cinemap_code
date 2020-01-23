@@ -6,6 +6,7 @@ cgitb.enable(format='text')
 from jinja2 import Environment, FileSystemLoader
 import folium
 import pandas as pd
+import os
 
 edinburgh_coords = [55.948795,-3.200226]
 
@@ -30,6 +31,22 @@ def foliumMap():
     for row in c:
             folium.Marker(row[2:4], popup=row[1], icon=folium.Icon(color='red', icon='glyphicon-cutlery')).add_to(map1)
     conn.close()
+
+    #  Circle marker example
+    folium.CircleMarker(
+        location=[55.948795,-3.200226],
+        radius=50,
+        popup='POPUP TEXT OF YOUR CHOICE',
+        color='#428bca',
+        fill=True,
+        fill_color='#428bca'
+    ).add_to(map1)
+
+    meadows = os.path.join('geojson','meadows.json')
+
+    # GeoJSON example
+    folium.GeoJson(meadows, name='meadows').add_to(map1)
+
     return map1.get_root().render()
 
 
