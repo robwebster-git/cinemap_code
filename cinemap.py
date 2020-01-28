@@ -7,6 +7,7 @@ from jinja2 import Environment, FileSystemLoader
 import folium
 import pandas as pd
 import os
+import json
 
 edinburgh_coords = [55.948795,-3.200226]
 
@@ -23,13 +24,20 @@ def foliumMap():
         pwd = f.readline().strip()
     conn = cx_Oracle.connect(f"s0092179/{pwd}@geoslearn")
     c = conn.cursor()
-    c.execute("SELECT * FROM CINEMAS")
 
+    c.execute("SELECT * FROM CINEMAS")
     for row in c:
         folium.Marker(row[2:4], popup=row[1], icon=folium.Icon(color='blue', icon='glyphicon-facetime-video')).add_to(map1)
+
     c.execute("SELECT * FROM RESTAURANTS")
     for row in c:
             folium.Marker(row[2:4], popup=row[1], icon=folium.Icon(color='red', icon='glyphicon-cutlery')).add_to(map1)
+
+    c.execute("SELECT * FROM JSON_EXAMPLE")
+    for row in c:
+        thing = json.load(row[1])
+        folium.GeoJson(thing, name='meadows').add_to(map1)
+
     conn.close()
 
     #  Circle marker example
@@ -42,10 +50,10 @@ def foliumMap():
         fill_color='#428bca'
     ).add_to(map1)
 
-    meadows = os.path.join('geojson','meadows.json')
+    #meadows = os.path.join('geojson','meadows.json')
 
     # GeoJSON example
-    folium.GeoJson(meadows, name='meadows').add_to(map1)
+    #folium.GeoJson(meadows, name='meadows').add_to(map1)
 
     return map1.get_root().render()
 
