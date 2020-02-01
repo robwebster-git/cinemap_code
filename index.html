@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-  <head> 
+  <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -42,6 +42,16 @@
             <div class="col-sm-4 col-xs-12" id="form1">
               <h2>Selections & Queries</h2>
               <hr>
+              <!-- Form with cinema facilities -->
+              <div>
+              <form name="facilities-form" action="./cinemap.py" method="get">
+                  <input type="checkbox" name="facilities" value="bar"> Bar<br>
+                  <input type="checkbox" name="facilities" value="popcorn"> Popcorn<br>
+                  <input type="checkbox" name="facilities" value="access"> Wheelchair Access<br>
+                  <input type="checkbox" name="facilities" value="student"> Student Discount<br>
+                  <button type="submit" onClick="this.form.submit()">Submit Preferences</button>
+              </div>
+
               <div class="custom-control custom-switch my-3">
                   <input type="checkbox" class="custom-control-input" id="customSwitch1">
                   <label class="custom-control-label" for="customSwitch1">Possible switch element...</label>

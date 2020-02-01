@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import cgi
 import cgitb
 import cx_Oracle
 cgitb.enable(format='text')
@@ -10,6 +11,11 @@ import os
 import json
 
 edinburgh_coords = [55.948795,-3.200226]
+user = "s1434165"
+form = cgi.FieldStorage()
+
+with open('/web/s1434165/public_html/cgi-bin/sensitive/pw.txt', 'r') as f:
+    pwd = f.readline().strip()
 
 def render_html():
     env = Environment(loader=FileSystemLoader('.'))
@@ -18,17 +24,20 @@ def render_html():
     print(temp.render(map=inpFol))
 
 def foliumMap():
+    filter = facilitiesFilter()
+
     map1 = folium.Map(location = edinburgh_coords, zoom_start = 14)
-    #conn = cx_Oracle.connect("student/train@geoslearn")
-    with open('../../../details.txt', 'r') as f:
-        pwd = f.readline().strip()
-    conn = cx_Oracle.connect(f"s0092179/{pwd}@geoslearn")
+
+    conn = cx_Oracle.connect(user=user, password=pwd, dsn="geoslearn")
     c = conn.cursor()
+    c.execute("SELECT A.NAME, A.OPEN, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X FROM CINEMAS A"+filter)
 
-    c.execute("SELECT * FROM CINEMAS")
     for row in c:
-        folium.Marker(row[2:4], popup=row[1], icon=folium.Icon(color='blue', icon='glyphicon-facetime-video')).add_to(map1)
+        folium.Marker(row[2:],popup=row[0],icon=folium.Icon(color='red', icon='film')).add_to(map1)
 
+    conn.close()
+
+    """
     c.execute("SELECT * FROM RESTAURANTS")
     for row in c:
             folium.Marker(row[2:4], popup=row[1], icon=folium.Icon(color='red', icon='glyphicon-cutlery')).add_to(map1)
@@ -54,9 +63,58 @@ def foliumMap():
 
     # GeoJSON example
     #folium.GeoJson(meadows, name='meadows').add_to(map1)
-
+    """
     return map1.get_root().render()
 
+def facilitiesChoice():
+    """ Taking the user's choice(s) and selecting the relevant column """
+
+    choices = form.getvalue("facilities")
+
+    if choices == None: # if user has selected nothing
+        fac_var = [] # make blank
+    else:
+        fac_var = choices # else take the choices
+
+    crit = [] # empty list to fill with rows
+
+    # dict relating user variables to relevant columns
+    fac_filter_dict = {
+    'bar': 'A.BAR',
+    'popcorn': 'A.POPCORN',
+    'access': 'A.WHEELCHAIR_ACC',
+    'student': 'A.STUDENT_DISC'
+    }
+
+    # testing which user variable was selected
+    for i in fac_var:
+        for j in fac_filter_dict.keys():
+            if i == j: # select corresponding column
+                crit = crit + [fac_filter_dict[j]]
+
+    # return column name(s) for use in the query
+    return crit
+
+def facilitiesFilter():
+    """ Taking user choice and integrating into SQL """
+
+    # set up the SQL
+    filter = ' WHERE '
+    crit = facilitiesChoice()
+
+    # if no criteria have been selected
+    if len(crit)<1:
+        filter = '' # no filter
+    else:
+        var = ' AND ' # to join the criteria(s)
+
+    for i in crit:
+        if i == crit[-1]: #if its the last criteria
+            var = '' # no AND at the end
+        filter = filter + str(i) + "='y'" + var
+
+    # return completed query filter
+    return filter
 
 
 def getDBdata(table_name='CINEMAS', order_column='CINEMA_ID'):
