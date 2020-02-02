@@ -24,16 +24,29 @@ def render_html():
     print(temp.render(map=inpFol))
 
 def foliumMap():
-    filter = facilitiesFilter()
+    facilities = facilitiesFilter()
+    film = filmsFilter()
+
+    if facilities == None and film == None:
+        where = ''
+    else:
+        where = ' WHERE '
+
+    select = 'SELECT A.NAME, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X '
+    tables = 'FROM CINEMAS A '
+    joins = "INNER JOIN CINEFILMRELATION AB ON A.CINEMA_ID = AB.CINEMA_ID INNER JOIN FILMS B ON B.FILM_ID = AB.FILM_ID "
+
+    sql = select + tables + joins
+    filter = facilities
 
     map1 = folium.Map(location = edinburgh_coords, zoom_start = 14)
 
     conn = cx_Oracle.connect(user=user, password=pwd, dsn="geoslearn")
     c = conn.cursor()
-    c.execute("SELECT A.NAME, A.OPEN, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X FROM CINEMAS A"+filter)
+    c.execute(sql+filter)
 
     for row in c:
-        folium.Marker(row[2:],popup=row[0],icon=folium.Icon(color='red', icon='film')).add_to(map1)
+        folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='red', icon='film')).add_to(map1)
 
     conn.close()
 
@@ -65,6 +78,24 @@ def foliumMap():
     #folium.GeoJson(meadows, name='meadows').add_to(map1)
     """
     return map1.get_root().render()
+
+def filmsFilter():
+    choice = form.getvalue("film")
+    filter = ''
+    if choice == None:
+        filter = ""
+    else:
+        filter = ""
+    return filter
+
+def filmChoice():
+
+
+
+    #select a.name from cinemas a  where b.title = 'Jojo Rabbit';
+
+
+    return choice
 
 def facilitiesChoice():
     """ Taking the user's choice(s) and selecting the relevant column """
@@ -99,12 +130,11 @@ def facilitiesFilter():
     """ Taking user choice and integrating into SQL """
 
     # set up the SQL
-    filter = ' WHERE '
     crit = facilitiesChoice()
+    filter = 'WHERE '
 
-    # if no criteria have been selected
-    if len(crit)<1:
-        filter = '' # no filter
+    if len(crit)==0:
+        filter = ''
     else:
         var = ' AND ' # to join the criteria(s)
 
