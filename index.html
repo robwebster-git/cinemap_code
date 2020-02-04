@@ -44,20 +44,47 @@
               <hr>
               <!-- Form with cinema facilities -->
               <div>
-              <form name="facilities-form" action="./cinemap.py" method="get">
+                <h3>Cinema Facilities</h3>
+              <form name="options-form" action="./cinemap.py" method="get">
                   <input type="checkbox" name="facilities" value="bar"> Bar<br>
                   <input type="checkbox" name="facilities" value="popcorn"> Popcorn<br>
                   <input type="checkbox" name="facilities" value="access"> Wheelchair Access<br>
                   <input type="checkbox" name="facilities" value="student"> Student Discount<br>
-                  <button type="submit" onClick="this.form.submit()">Submit Preferences</button>
-                </form>
               </div>
               <!-- Form with film options -->
-              <form name="films-form" action="./cinemap.py" method="get">
-                <select id="film-dropdown" name="film">
+              <div>
+                <h3>Films</h3>
+                <!-- Title options -->
+                <h6>Filter by name</h6>
+                <select id="film-dropdown" class="custom-select my-3" name="film">
+                  <option value="all">Any</option>
                   <option value="JoJo Rabbit">JoJo Rabbit</option>
-                </select>
-                <button type="submit" onClick="this.form.submit()">Submit Film</button>
+                  <option value="Little Women">Little Women</option>
+                  <option value="Dolittle">Dolittle</option>
+                  <option value="Amarcord">Amarcord</option>
+                </select><br>
+                <!-- Genre options -->
+                <h6>Filter by genre</h6>
+                <select id="genre-dropdown" class="custom-select my-3" name="genre">
+                  <option value="all">Any</option>
+                  <option value="Action">action</option>
+                  <option value="Drama">drama</option>
+                  <option value="Family">family</option>
+                  <option value="Comedy">comedy</option>
+                </select><br>
+                <!-- Age options -->
+                <h6>Filter by age rating</h6>
+                <select id="age-rating-dropdown" class="custom-select my-3" name="age-rating">
+                  <option value="all">Any</option>
+                  <option value="U">U</option>
+                  <option value="PG">PG</option>
+                  <option value="12A">12A</option>
+                  <option value="15">15</option>
+                </select><br>
+                <button class="btn btn-primary" style="margin:10 10" type="submit" onClick="this.form.submit()">Submit Preferences</button>
+              </form>
+            </div>
+
               <div class="custom-control custom-switch my-3">
                   <input type="checkbox" class="custom-control-input" id="customSwitch1">
                   <label class="custom-control-label" for="customSwitch1">Possible switch element...</label>

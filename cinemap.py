@@ -24,20 +24,29 @@ def render_html():
     print(temp.render(map=inpFol))
 
 def foliumMap():
-    facilities = facilitiesFilter()
-    film = filmsFilter()
+    facilities, chp1 = facilitiesFilter()
+    film, chp2 = filmsFilter()
+    var1 = ''
 
+    # if nothing has been selected as a filter yet
     if facilities == None and film == None:
-        where = ''
+        where = '' # don't start a where statement
     else:
-        where = ' WHERE '
+        where = ' WHERE ' # otherwise do
 
+    # if two filters have been selected, join them
+    if chp1 == 1 and chp2 == 1:
+        var1 = ' AND '
+
+    # target data
     select = 'SELECT A.NAME, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X '
+    # target table(s)
     tables = 'FROM CINEMAS A '
+    # inner join for M2M table
     joins = "INNER JOIN CINEFILMRELATION AB ON A.CINEMA_ID = AB.CINEMA_ID INNER JOIN FILMS B ON B.FILM_ID = AB.FILM_ID "
 
     sql = select + tables + joins
-    filter = facilities
+    filter = where + facilities + var1 + film
 
     map1 = folium.Map(location = edinburgh_coords, zoom_start = 14)
 
@@ -48,6 +57,8 @@ def foliumMap():
     for row in c:
         folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='red', icon='film')).add_to(map1)
 
+    # printing query so we can watch whats going on
+    print('<h6>Query: '+str(sql+filter)+'</h6>')
     conn.close()
 
     """
@@ -80,30 +91,33 @@ def foliumMap():
     return map1.get_root().render()
 
 def filmsFilter():
-    choice = form.getvalue("film")
+    """ Taking the user's choice of film and searching for it """
     filter = ''
-    if choice == None:
-        filter = ""
-    else:
-        filter = ""
-    return filter
+    choice = form.getvalue("film")
+    chp = 1 # flag to indicate if choice has been made
 
-def filmChoice():
+    if choice in (None,'all'):
+        chp = 0 # no choice
+    else: # else search for it
+        filter = "B.TITLE = '" +str(choice)+"' "
 
-
-
-    #select a.name from cinemas a  where b.title = 'Jojo Rabbit';
-
-
-    return choice
+    return filter, chp
 
 def facilitiesChoice():
     """ Taking the user's choice(s) and selecting the relevant column """
+    chp = 1
+    fac_var = []
+    choices = form.getlist("facilities")
 
-    choices = form.getvalue("facilities")
+    if isinstance(choices, list): # The user is requesting more than one item.
+        fac_var = fac_var.append(choices)
+    else:
+        fac_var = choices
+    # The user is requesting only one item.
 
-    if choices == None: # if user has selected nothing
+    if len(choices)<1: # if user has selected nothing
         fac_var = [] # make blank
+        chp = 0
     else:
         fac_var = choices # else take the choices
 
@@ -124,16 +138,16 @@ def facilitiesChoice():
                 crit = crit + [fac_filter_dict[j]]
 
     # return column name(s) for use in the query
-    return crit
+    return crit, chp
 
 def facilitiesFilter():
     """ Taking user choice and integrating into SQL """
 
     # set up the SQL
-    crit = facilitiesChoice()
-    filter = 'WHERE '
+    crit, chp = facilitiesChoice()
+    filter = ''
 
-    if len(crit)==0:
+    if chp == 0:
         filter = ''
     else:
         var = ' AND ' # to join the criteria(s)
@@ -144,7 +158,7 @@ def facilitiesFilter():
         filter = filter + str(i) + "='y'" + var
 
     # return completed query filter
-    return filter
+    return filter, chp
 
 
 def getDBdata(table_name='CINEMAS', order_column='CINEMA_ID'):
