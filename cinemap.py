@@ -28,11 +28,11 @@ def foliumMap():
     film, chp2 = filmsFilter()
     var1 = ''
 
-    # if nothing has been selected as a filter yet
-    if facilities == None and film == None:
-        where = '' # don't start a where statement
+    # if something has been selected as a filter
+    if 1 in (chp1,chp2):
+        where = ' WHERE ' # start a where statement
     else:
-        where = ' WHERE ' # otherwise do
+        where = '' # otherwise don't
 
     # if two filters have been selected, join them
     if chp1 == 1 and chp2 == 1:
