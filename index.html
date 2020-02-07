@@ -91,6 +91,12 @@
       }
       function showPosition(position) {
         x.innerHTML = "Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude;
+        var mapid = document.querySelectorAll('div[class^="folium-map"]')
+        var mapdiv = document.getElementById('map1')
+        var mapin = mapid[0].id
+        console.log(mapdiv)
+        console.log(mapin)
+        var marker = L.marker([position.coords.latitude, position.coords.longitude]);
       }
       console.log(getLocation())
 </script>
