@@ -25,81 +25,119 @@ def render_html():
 
 def foliumMap():
     facilities, chp1 = facilitiesFilter()
-    film, chp2 = filmsFilter()
+    film, chp2 = filmFilter()
+    rest, chp3 = restFilter()
+    rest_dist, chp4 = restDistFilter()
+
     var1 = ''
+    var2 = ''
+    var3 = ''
 
     # if something has been selected as a filter
-    if 1 in (chp1,chp2):
+    if 1 in (chp1,chp2,chp3,chp4):
         where = ' WHERE ' # start a where statement
     else:
         where = '' # otherwise don't
 
     # if two filters have been selected, join them
-    if chp1 == 1 and chp2 == 1:
+    if chp1 == 1 and any( [chp2 == 1, chp3 ==1, chp4==1] ):
         var1 = ' AND '
+    elif all( [chp2 == 1, chp3 == 1]):
+        var2 = ' AND '
+    elif all( [chp3 == 1,chp4 ==1]):
+        var3 = ' AND '
+
 
     # target data
     select = 'SELECT A.NAME, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X '
     # target table(s)
     tables = 'FROM CINEMAS A '
     # inner join for M2M table
-    joins = "INNER JOIN CINEFILMRELATION AB ON A.CINEMA_ID = AB.CINEMA_ID INNER JOIN FILMS B ON B.FILM_ID = AB.FILM_ID "
+    joins = 'INNER JOIN CINEFILMRELATION AB ON A.CINEMA_ID = AB.CINEMA_ID INNER JOIN FILMS B ON B.FILM_ID = AB.FILM_ID, s1987402.RESTAURANTS R, s1987402.SHOPS S '
+    # group results to avoid redundant repeats
+    group = 'GROUP BY A.NAME, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X'
 
     sql = select + tables + joins
-    filter = where + facilities + var1 + film
+    filter = where + facilities + var1 + film + var2 + rest + var3 + rest_dist + group
 
-    map1 = folium.Map(location = edinburgh_coords, zoom_start = 14)
+    map1 = folium.Map(location = edinburgh_coords, zoom_start = 13)
 
     conn = cx_Oracle.connect(user=user, password=pwd, dsn="geoslearn")
     c = conn.cursor()
     c.execute(sql+filter)
-
     for row in c:
         folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='red', icon='film')).add_to(map1)
 
-    # printing query so we can watch whats going on
+
+    c.execute("SELECT B.NAME, B.GEOM.SDO_POINT.Y, B.GEOM.SDO_POINT.X FROM s1987402.RESTAURANTS B")
+    for row in c:
+        folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='green', icon='cutlery')).add_to(map1)
+
     print('<h6>Query: '+str(sql+filter)+'</h6>')
     conn.close()
 
-    """
-    c.execute("SELECT * FROM RESTAURANTS")
-    for row in c:
-            folium.Marker(row[2:4], popup=row[1], icon=folium.Icon(color='red', icon='glyphicon-cutlery')).add_to(map1)
-
-    c.execute("SELECT * FROM JSON_EXAMPLE")
-    for row in c:
-        thing = json.load(row[1])
-        folium.GeoJson(thing, name='meadows').add_to(map1)
-
-    conn.close()
-
-    #  Circle marker example
-    folium.CircleMarker(
-        location=[55.948795,-3.200226],
-        radius=50,
-        popup='POPUP TEXT OF YOUR CHOICE',
-        color='#428bca',
-        fill=True,
-        fill_color='#428bca'
-    ).add_to(map1)
-
-    #meadows = os.path.join('geojson','meadows.json')
-
-    # GeoJSON example
-    #folium.GeoJson(meadows, name='meadows').add_to(map1)
-    """
     return map1.get_root().render()
 
-def filmsFilter():
-    """ Taking the user's choice of film and searching for it """
+def restFilter():
+    choice = form.getvalue("rest")
+    chp = 1
     filter = ''
-    choice = form.getvalue("film")
-    chp = 1 # flag to indicate if choice has been made
+    test_char = ''
+    real_chars = ''
+
+    rest_dict = {
+    't': 'R.TYPE = ',
+    'n': 'R.NAME = '
+    }
 
     if choice in (None,'all'):
         chp = 0 # no choice
     else: # else search for it
-        filter = "B.TITLE = '" +str(choice)+"' "
+        test_char = choice[0]
+        real_chars = choice[1:]
+        for j in rest_dict.keys():
+            if test_char == j: # select corresponding column
+                filter = rest_dict[j] + "'"+str(real_chars)+"' "
+
+    return filter, chp
+
+def restDistFilter():
+    dist_choice = form.getvalue("rest-dist")
+    sub_filter = ""
+    chp = 1
+
+    if dist_choice in (None, '0'):
+        sub_filter = sub_filter
+        chp = 0
+    else:
+        sub_filter = "A.NAME IN (SELECT A.NAME FROM CINEMAS A, s1987402.RESTAURANTS R WHERE SDO_GEOM.WITHIN_DISTANCE(A.GEOM, "+str(dist_choice)+", R.GEOM, 0.000001, 'unit=METER') = 'TRUE') "
+
+    return sub_filter, chp
+
+def filmFilter():
+    """ Taking the user's choice of film and searching for it """
+    filter = ''
+    column = ''
+    real_chars = ''
+    choice = form.getvalue("film")
+    chp = 1 # flag to indicate if choice has been made
+
+    film_dict = {
+    't': 'B.TITLE = ',
+    'g': 'B.GENRE = ',
+    'a': 'B.AGE_RATING = '
+    }
+
+    if choice in (None,'all'):
+        chp = 0 # no choice
+    else: # else search for it
+        test_char = choice[0]
+        real_chars = choice[1:]
+        for j in film_dict.keys():
+            if test_char == j: # select corresponding column
+                filter = film_dict[j] + "'"+str(real_chars)+"' "
+
+
 
     return filter, chp
 
