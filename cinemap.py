@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-
+"""
+s0092179.HOODS_4326 H
+s0092179.PARKING P
+s0092179.SECTORS SEC
+s0092179.BUSROUTES_4326
+s1983906.BUS_STOPS B_S
+"""
 import cgi
 import cgitb
 import cx_Oracle
@@ -26,8 +32,8 @@ def render_html():
 def foliumMap():
     facilities, chp1 = facilitiesFilter()
     film, chp2 = filmFilter()
-    rest, chp3 = restFilter()
-    rest_dist, chp4 = restDistFilter()
+    rest, chp3 = restDistFilter()
+    bus, chp4 = busFilter()
 
     var1 = ''
     var2 = ''
@@ -35,16 +41,18 @@ def foliumMap():
 
     # if something has been selected as a filter
     if 1 in (chp1,chp2,chp3,chp4):
-        where = ' WHERE ' # start a where statement
+        where = 'WHERE ' # start a where statement
     else:
         where = '' # otherwise don't
 
     # if two filters have been selected, join them
-    if chp1 == 1 and any( [chp2 == 1, chp3 ==1, chp4==1] ):
+    if chp1 == 1 and any([chp2 == 1, chp3 ==1, chp4 == 1]):
         var1 = ' AND '
-    elif all( [chp2 == 1, chp3 == 1]):
+
+    if chp2 == 1 and chp3 == 1:
         var2 = ' AND '
-    elif all( [chp3 == 1,chp4 ==1]):
+
+    if chp3 and chp4 == 1:
         var3 = ' AND '
 
 
@@ -53,12 +61,13 @@ def foliumMap():
     # target table(s)
     tables = 'FROM CINEMAS A '
     # inner join for M2M table
-    joins = 'INNER JOIN CINEFILMRELATION AB ON A.CINEMA_ID = AB.CINEMA_ID INNER JOIN FILMS B ON B.FILM_ID = AB.FILM_ID, s1987402.RESTAURANTS R, s1987402.SHOPS S '
+    innerjoin = 'INNER JOIN CINEFILMRELATION AB ON A.CINEMA_ID = AB.CINEMA_ID INNER JOIN FILMS B ON B.FILM_ID = AB.FILM_ID '
+    extjoins = 's1987402.RESTAURANTS R, s1987402.SHOPS S '
     # group results to avoid redundant repeats
     group = 'GROUP BY A.NAME, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X'
 
-    sql = select + tables + joins
-    filter = where + facilities + var1 + film + var2 + rest + var3 + rest_dist + group
+    sql = select + tables + innerjoin
+    filter = where + facilities + var1 + film + var2 + rest + var3 + bus + group
 
     map1 = folium.Map(location = edinburgh_coords, zoom_start = 13)
 
@@ -69,9 +78,10 @@ def foliumMap():
         folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='red', icon='film')).add_to(map1)
 
 
-    c.execute("SELECT B.NAME, B.GEOM.SDO_POINT.Y, B.GEOM.SDO_POINT.X FROM s1987402.RESTAURANTS B")
+    c.execute("SELECT B.STOP, B.GEOM.SDO_POINT.Y, B.GEOM.SDO_POINT.X FROM s1983906.BUS_STOPS B")
     for row in c:
-        folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='green', icon='cutlery')).add_to(map1)
+        folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='green', icon='road')).add_to(map1)
+
 
     print('<h6>Query: '+str(sql+filter)+'</h6>')
     conn.close()
@@ -97,11 +107,12 @@ def restFilter():
         real_chars = choice[1:]
         for j in rest_dict.keys():
             if test_char == j: # select corresponding column
-                filter = rest_dict[j] + "'"+str(real_chars)+"' "
+                filter = rest_dict[j] + "'"+str(real_chars)+"' AND "
 
     return filter, chp
 
 def restDistFilter():
+    rest_choice, ignore = restFilter()
     dist_choice = form.getvalue("rest-dist")
     sub_filter = ""
     chp = 1
@@ -110,9 +121,33 @@ def restDistFilter():
         sub_filter = sub_filter
         chp = 0
     else:
-        sub_filter = "A.NAME IN (SELECT A.NAME FROM CINEMAS A, s1987402.RESTAURANTS R WHERE SDO_GEOM.WITHIN_DISTANCE(A.GEOM, "+str(dist_choice)+", R.GEOM, 0.000001, 'unit=METER') = 'TRUE') "
+        sub_filter = "A.NAME IN (SELECT A.NAME FROM CINEMAS A, s1987402.RESTAURANTS R WHERE "+str(rest_choice)+"SDO_GEOM.WITHIN_DISTANCE(A.GEOM, "+str(dist_choice)+", R.GEOM, 5, 'unit=METER') = 'TRUE') "
 
     return sub_filter, chp
+
+def busFilter():
+    route_chp = 1
+    stop_chp = 1
+    filter = ''
+    column = ''
+    stop_filter = ''
+
+    route_choice = form.getvalue("route")
+    stop_choice = form.getvalue("stop")
+    bus_dist = form.getvalue("bus-dist")
+
+    if route_choice == None:
+        route_chp = 0
+
+    if stop_choice in (None,'any'):
+        stop_chp = 0
+        #query with buffer around bus route line
+
+    if stop_chp == 1:
+        stop_filter = "B_S.STOP = '"+str(stop_choice)+"' AND "
+        filter = "A.NAME IN (SELECT A.NAME FROM CINEMAS A, s1983906.BUS_STOPS B_S WHERE "+str(stop_filter)+"SDO_GEOM.WITHIN_DISTANCE(A.GEOM, "+str(bus_dist)+", B_S.GEOM, 5, 'unit=METER') = 'TRUE') "
+
+    return filter, route_chp
 
 def filmFilter():
     """ Taking the user's choice of film and searching for it """
@@ -193,7 +228,7 @@ def facilitiesFilter():
     for i in crit:
         if i == crit[-1]: #if its the last criteria
             var = '' # no AND at the end
-        filter = filter + str(i) + "='y'" + var
+        filter = filter + str(i) + "='y' " + var
 
     # return completed query filter
     return filter, chp
