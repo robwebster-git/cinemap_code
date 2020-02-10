@@ -31,45 +31,16 @@
     </style>
     <title>CineMap</title>
   </head>
-  <body>
+  <body onload="document.form2.submit()">
       <div class="container">
         <div class="row text-center">
               <div class="col"><h1>CineMap</h1>
-                  <h3 id="location"></h3>
               </div>
         </div>
         <div class="row" id="maprow">
             <div class="col-sm-4 col-xs-12" id="form1">
               <h2>Selections & Queries</h2>
-              <hr>
-              <div class="custom-control custom-switch my-3">
-                  <input type="checkbox" class="custom-control-input" id="customSwitch1">
-                  <label class="custom-control-label" for="customSwitch1">Possible switch element...</label>
-              </div>
-              <div class="custom-control custom-switch my-3">
-                  <input type="checkbox" class="custom-control-input" id="customSwitch2">
-                  <label class="custom-control-label" for="customSwitch2">Possible switch element 2...</label>
-              </div>
-              <select class="custom-select my-3" id="dropdown1">
-                  <option selected>Dropdown1</option>
-                  <option value="1">One</option>
-                  <option value="2">Two</option>
-                  <option value="3">Three</option>
-              </select>
-              <select class="custom-select my-3" id="dropdown2">
-                  <option selected>Dropdown2</option>
-                  <option value="1">Four</option>
-                  <option value="2">Five</option>
-                  <option value="3">Six</option>
-              </select>
-              <div>
-                  <label for="customRange1">Rangy Things 1</label>
-                  <input type="range" class="custom-range my-3" min="0" max="5" step="0.1" id="range1">
-              </div>
-              <div>
-                  <label for="customRange2">Rangy Things 2</label>
-                  <input type="range" class="custom-range my-3" min="0" max="5" step="0.1" id="range2">
-              </div>
+              <h3 style="display: none;" id="location"></h3>
               <input class="btn btn-primary" type="submit" value="Submit">
             </div>
             <div class="col-sm-8 col-xs-12" id="map1">{{map}}</div>
@@ -82,6 +53,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script>
       var x = document.getElementById("location");
+      var f = document.getElementById("user_location")
       function getLocation() {
         if (navigator.geolocation) {
           navigator.geolocation.watchPosition(showPosition);
@@ -91,6 +63,8 @@
       }
       function showPosition(position) {
         x.innerHTML = "Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude;
+        f.innerHTML = "Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude;
+
         var mapid = document.querySelectorAll('div[class^="folium-map"]')
         var mapdiv = document.getElementById('map1')
         var mapin = mapid[0].id

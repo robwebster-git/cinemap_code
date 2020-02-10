@@ -34,7 +34,7 @@ style3 = {'fillColor': 'blue', 'color': 'blue', 'weight': 2}
 
 def render_html():
     env = Environment(loader=FileSystemLoader('.'))
-    temp = env.get_template('index.html')
+    temp = env.get_template('index2.html')
     inpFol = foliumMap()
     print(temp.render(map=inpFol))
 
@@ -73,13 +73,13 @@ def foliumMap():
 
     class Cinema:
 
-        def __init__(self, id, name, lon, lat):
+        def __init__(self, id, name, films, lat, lon):
 
             self.id = id
             self.name = name
-            self.lon = lon
+            self.films = films
             self.lat = lat
-            self.films = []
+            self.lon = lon
 
 
     c.execute("SELECT OGR_FID, sdo_util.to_geojson(ora_geometry) as jsongeometry from busroutes_8307")
@@ -94,88 +94,55 @@ def foliumMap():
         #print(f"name: {name}, data:{data}")
 
     c.execute("SELECT UNIQUE a.CINEMA_ID, a.NAME, b.title, c.time1, c.time2, c.time3, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1434165.cinemas a, s1434165.films b, s1434165.cinefilmrelation c where c.film_id = b.film_id and c.cinema_id = a.cinema_id")
-
+    #cinema_names = []
+    #cinema_ids = []
+    #cinema_lats = []
+    #cinema_lons = []
+    #film_titles = []
+    #film_times= []
+    #for row in c:
+        #cinema_ids.append(row[0])
+        #cinema_names.append(row[1])
+        #film_titles.append(row[2])
+        #film_times.append((row[3:6]))
+        #cinema_lons.append(row[6])
+        #cinema_lats.append(row[7])
     cinemas_list = []
-
-    cinema1 = None
-    cinema2 = None
-    cinema3 = None
-    cinema4 = None
-    cinema5 = None
-
     for row in c:
-        (a, b, c2, d, e, f, g, h) = row
-        cine = "cinema" + str(a)
-        this_film = [f"{c2} : {d}, {e}, {f}"]
-        if cine == 'cinema1':
-            if cinema1 is None:
-                cinema1 = Cinema(a, b, g, h)
-                cinema1.films.append(this_film)
-                cinemas_list.append(cinema1)
-            else:
-                cinema1.films.append(this_film)
-        if cine == 'cinema2':
-            if cinema2 is None:
-                cinema2 = Cinema(a, b, g, h)
-                cinema2.films.append(this_film)
-                cinemas_list.append(cinema2)
-            else:
-                cinema2.films.append(this_film)
-        if cine == 'cinema3':
-            if cinema3 is None:
-                cinema3 = Cinema(a, b, g, h)
-                cinema3.films.append(this_film)
-                cinemas_list.append(cinema3)
-            else:
-                cinema3.films.append(this_film)
-        if cine == 'cinema4':
-            if cinema4 is None:
-                cinema4 = Cinema(a, b, g, h)
-                cinema4.films.append(this_film)
-                cinemas_list.append(cinema4)
-            else:
-                cinema4.films.append(this_film)
-        if cine == 'cinema5':
-            if cinema5 is None:
-                cinema5 = Cinema(a, b, g, h)
-                cinema5.films.append(this_film)
-                cinemas_list.append(cinema5)
-            else:
-                cinema5.films.append(this_film)
+        (a, b, c, d, e, f, g, h) = row
+        cinema_name = "cinema" + str(a)
+        print(cinema_name)
+        films = f"{c} : {d}, {e}, {f}"
+        cine = Cinema(a, b, films, g, h)
+        cinemas_list.append(cine)
 
-    for cin in cinemas_list:
-        popup_text = f"<h3>{cin.name}</h3><br>"
-        for film in cin.films:
-            #print(cin.name, film)
-            popup_text += f"<tr>{film[0]}</tr><br>"
-        cin.popup_text = popup_text
-        #print(cin.popup_text)
-        html = folium.Html(cin.popup_text, script=True)
-        popup = folium.Popup(html, max_width=2650)
-        folium.Marker([cin.lat, cin.lon], popup=popup, icon=folium.Icon(color='blue', icon='glyphicon-facetime-video')).add_to(cinema_layer)
+    for cine in cinemas_list:
+        print(cine.name)
+        #popup_text = f"<h3>{cinema.name}</h3><br>"
+        folium.Marker(cine.lat, cine.lon, popup=cine.name, icon=folium.Icon(color='blue', icon='glyphicon-facetime-video')).add_to(cinema_layer)
 
-    c.execute("SELECT a.SHOP_ID, a.NAME, a.CATEGORY, a.OPEN, a.CLOSE, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1987402.shops a")
-    for row in c:
-        id = row[0]
-        name = row[1]
-        category = row[2]
-        opentime = row[3]
-        closetime = row[4]
-        lon = row[5]
-        lat = row[6]
-        folium.Marker([lat, lon], popup=f"{name} Opening Time: {opentime}\n Closing Time: {closetime}", icon=folium.Icon(color='green', icon='glyphicon-tag')).add_to(shop_layer)
+    #c.execute("SELECT a.SHOP_ID, a.NAME, a.CATEGORY, a.OPEN, a.CLOSE, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1987402.shops a")
+    #for row in c:
+    #    id = row[0]
+    #    name = row[1]
+    #    category = row[2]
+    #    opentime = row[3]
+    #    closetime = row[4]
+    #    lon = row[5]
+    #    lat = row[6]
+    #    folium.Marker([lat, lon], popup=f"{name} Opening Time: {opentime}\n Closing Time: {closetime}", icon=folium.Icon(color='green', icon='glyphicon-tag')).add_to(shop_layer)
 
-    c.execute("SELECT a.REST_ID, a.NAME, a.TYPE, a.OPEN, a.CLOSE, a.RATING, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1987402.restaurants a")
-    for row in c:
-        id = row[0]
-        name = row[1]
-        type = row[2]
-        opentime = row[3]
-        closetime = row[4]
-        rating = row[5]
-        lon = row[6]
-        lat = row[7]
-        folium.Marker([lat, lon], popup=f"{name}\nOpening Time: {opentime}\nClosing Time: {closetime}\nRating: {rating}", icon=folium.Icon(color='red', icon='glyphicon-cutlery')).add_to(restaurant_layer)
+    #c.execute("SELECT a.REST_ID, a.NAME, a.TYPE, a.OPEN, a.CLOSE, a.RATING, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1987402.restaurants a")
+    #for row in c:
+    #    id = row[0]
+    #    name = row[1]
+    #    type = row[2]
+    #    opentime = row[3]
+    #    closetime = row[4]
+    #    rating = row[5]
+    #    lon = row[6]
+    #    lat = row[7]
+    #    folium.Marker([lat, lon], popup=f"{name}\nOpening Time: {opentime}\nClosing Time: {closetime}\nRating: {rating}", icon=folium.Icon(color='red', icon='glyphicon-cutlery')).add_to(restaurant_layer)
 
     conn.close()
 
@@ -186,6 +153,8 @@ def foliumMap():
     restaurant_layer.add_to(map1)
 
     folium.LayerControl().add_to(map1)
+
+
 
     return map1.get_root().render()
 
