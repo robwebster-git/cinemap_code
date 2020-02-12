@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/web/s0092179/public_html/cgi-bin/cinemap/bin/python
+
 
 import cgitb
 import cx_Oracle
@@ -6,12 +7,11 @@ cgitb.enable(format='text')
 import cgi
 from jinja2 import Environment, FileSystemLoader
 import folium
-import pandas as pd
+from folium import plugins
 import os
 import json
-from pyproj import Proj, transform
-import gdal
 from branca.colormap import linear
+import branca.colormap as cm
 import random
 
 
@@ -19,17 +19,24 @@ form = cgi.FieldStorage()
 
 edinburgh_coords = [55.948795,-3.200226]
 
-project_3857 = Proj(init="epsg:3857")
-project_4326 = Proj(init="epsg:4326")
-project_27700 = Proj(init="epsg:27700")
-
-polycolours = linear.GnBu_06.scale(0,100)
+polycolours = linear.GnBu_06.scale(0,120)
 polycolours.caption = 'Areas of Edinburgh'
 
 colours = ['green', 'blue', 'red', 'orange', 'gray', 'yellow']
 
 style1 = {'fillColor': 'red', 'color': 'red', 'weight': 2}
 style3 = {'fillColor': 'blue', 'color': 'blue', 'weight': 2}
+
+
+class Cinema:
+
+    def __init__(self, id, name, lon, lat):
+
+        self.id = id
+        self.name = name
+        self.lon = lon
+        self.lat = lat
+        self.films = []
 
 
 def render_html():
@@ -40,13 +47,18 @@ def render_html():
 
 
 def foliumMap():
+    
     map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_start = 14)
 
-    folium.TileLayer('cartodbpositron', name="CartoDB Map", attr='Carto DB').add_to(map1)
-    #folium.TileLayer('mapquestopen', attr='Map Quest').add_to(map1)
-    #folium.TileLayer('MapQuest Open Aerial', attr='MapQuest').add_to(map1)
+    folium.TileLayer('cartodbpositron', name="CartoDB Positron", attr='Carto DB').add_to(map1)
+    folium.TileLayer('cartodbdark_matter', name="CartoDB DarkMatter", attr='Carto DB').add_to(map1)
+    folium.TileLayer('stamentoner', name="Stamen Toner", attr='Stamen Toner').add_to(map1)
 
+    plugins.LocateControl(auto_start=True).add_to(map1)
+
+    
     area_layer = folium.FeatureGroup(name='Areas of Edinburgh')
+    area_sub_group = folium.plugins.FeatureGroupSubGroup(area_layer, 'Areas')
     bus_layer = folium.FeatureGroup(name='Bus Routes')
     cinema_layer = folium.FeatureGroup(name='Cinemas')
     shop_layer = folium.FeatureGroup(name='Shops')
@@ -69,29 +81,19 @@ def foliumMap():
         jsons_4326.append(item)
         area_id = f"area{row[0]}"
         area_name = row[1]
-        folium.GeoJson(item,name=area_id,style_function = lambda x: style2).add_to(area_layer)
+        #folium.GeoJson(item, name=area_id, style_function = lambda x: style2).add_to(area_layer)
+        folium.Choropleth(geo_data=item, name=name, popup="popup", line_color='yellow', line_opacity=1, legend_name='Edinburgh District', fill_opacity=0.6, fill_color=polycolours(id)).add_to(area_layer)
 
-    class Cinema:
-
-        def __init__(self, id, name, lon, lat):
-
-            self.id = id
-            self.name = name
-            self.lon = lon
-            self.lat = lat
-            self.films = []
 
 
     c.execute("SELECT OGR_FID, sdo_util.to_geojson(ora_geometry) as jsongeometry from busroutes_8307")
     for row in c:
         name = row[0]
-        #print(name)
         data = json.load(row[1])
         if name == 1:
             folium.GeoJson(data, name=name, style_function = lambda x: style1).add_to(bus_layer)
         if name == 2:
             folium.GeoJson(data, name=name, style_function = lambda x: style3).add_to(bus_layer)
-        #print(f"name: {name}, data:{data}")
 
     c.execute("SELECT UNIQUE a.CINEMA_ID, a.NAME, b.title, c.time1, c.time2, c.time3, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1434165.cinemas a, s1434165.films b, s1434165.cinefilmrelation c where c.film_id = b.film_id and c.cinema_id = a.cinema_id")
 
@@ -180,10 +182,14 @@ def foliumMap():
     conn.close()
 
     area_layer.add_to(map1)
+    area_sub_group.add_to(map1)
     bus_layer.add_to(map1)
     cinema_layer.add_to(map1)
     shop_layer.add_to(map1)
     restaurant_layer.add_to(map1)
+    
+    #minimap = plugins.MiniMap()
+    #map1.add_child(minimap)
 
     folium.LayerControl().add_to(map1)
 
