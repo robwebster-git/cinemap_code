@@ -76,7 +76,6 @@ def foliumMap():
     c.execute(sql+filter)
     for row in c:
         folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='red', icon='film')).add_to(map1)
-
     """
     c.execute("SELECT B.STOP, B.GEOM.SDO_POINT.Y, B.GEOM.SDO_POINT.X FROM s1983906.BUS_STOPS B")
     for row in c:
