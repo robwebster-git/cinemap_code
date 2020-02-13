@@ -13,6 +13,7 @@ import shops
 import facilities as fac
 import buses
 import films
+import districts as hoods
 
 # External packages
 import cgi
@@ -64,35 +65,39 @@ def QueryBuilder():
     bus, chp4 = buses.Filter()
     shop, chp5 = shops.DistFilter()
     parks, chp6 = park.Filter()
+    hood, chp7 = hoods.Filter()
 
     var1 = ''
     var2 = ''
     var3 = ''
     var4 = ''
     var5 = ''
+    var6 = ''
 
     # if something has been selected as a filter
-    if 1 in (chp1,chp2,chp3,chp4,chp5,chp6):
+    if 1 in (chp1,chp2,chp3,chp4,chp5,chp6,chp7):
         where = 'WHERE ' # start a where statement
     else:
         where = '' # otherwise don't
 
     # if two filters have been selected, join them
-    if chp1 == 1 and any([chp2 == 1, chp3 ==1, chp4 == 1, chp5 ==1, chp6==1]):
+    if chp1 == 1 and any([chp2 == 1, chp3 ==1, chp4 == 1, chp5 ==1, chp6==1, chp7==1]):
         var1 = ' AND '
 
-    if chp2 == 1 and any([chp3 == 1, chp4 == 1, chp5 ==1, chp6==1]):
+    if chp2 == 1 and any([chp3 == 1, chp4 == 1, chp5 ==1, chp6==1, chp7==1]):
         var2 = ' AND '
 
-    if chp3 and any([chp4 == 1, chp5 ==1, chp6==1]):
+    if chp3 and any([chp4 == 1, chp5 ==1, chp6==1, chp7==1]):
         var3 = ' AND '
 
-    if chp4 and any([chp5 ==1, chp6==1]):
+    if chp4 and any([chp5 ==1, chp6==1, chp7==1]):
         var4 = ' AND '
 
-    if chp5 and any([chp6==1]):
+    if chp5 and any([chp6==1, chp7==1]):
         var5 = ' AND '
 
+    if chp6==1 and chp7==1:
+        var6 = ' AND '
 
     # target data
     select = 'SELECT A.NAME, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X '
@@ -105,7 +110,7 @@ def QueryBuilder():
     group = 'GROUP BY A.NAME, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X'
 
     sql = select + tables + innerjoin
-    filters = where + facilities + var1 + film + var2 + rests + var3 + bus + var4 + shop + var5 + parks + group
+    filters = where + facilities + var1 + film + var2 + rests + var3 + bus + var4 + shop + var5 + parks + var6 + hood + group
 
     query = sql + filters
 

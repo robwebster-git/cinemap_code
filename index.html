@@ -244,7 +244,7 @@
               <br><p>How would you like to filter?</p>
               <input type="radio" name="park-filter" id="btn-park-in" value=inside> Inside the zone<br>
               <input type="radio" name="park-filter" id="btn-park-out" value=outside> Outside the zone<br>
-              <input type="radio" name="park-filter" id="btn-park-dist" value=distance> Distance from zone<br>
+              <input type="radio" name="park-filter" id="btn-park-dist" value=distance> Distance from zone (m)<br>
 
               <!-- Distance dropdown -->
               <select id="park-dist-choice-dropdown" class="custom-select my-3" name="park-dist"></select><br>
@@ -252,9 +252,15 @@
 
               <!-- 7th Collapsible: Districts -->
               <button form="none" class="collapsible"><h4>Districts</h4></button>
-              <!-- Travel content -->
+              <!-- District content -->
               <div class="content">
-              <h6>Filter by...</h6>
+              <h5>Cinemas which are </h5>
+              <input type="radio" name="district-filter" id="btn-dist-not-in" value=not-in> not in<br>
+              <input type="radio" name="district-filter" id="btn-dist-in" value=in> in<br>
+              <input type="radio" name="district-filter" id="btn-dist-adj" value=adj> in and adjacent to<br>
+              <br><p>the following district:</p>
+              <!-- Selecting district name -->
+              <select id="district-choice-dropdown" class="custom-select my-3" name="district-name"></select><br>
             </div>
 
 
