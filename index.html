@@ -158,7 +158,7 @@
 
                       <p>Distance from cinema:</p>
                           <div class="slidecontainer">
-                          <input type="range" name="rest-dist" min="0" max="500" value="0" step="10" class="slider" id="myRange">
+                          <input type="range" name="rest-dist" min="0" max="800" value="0" step="10" class="slider" id="myRange">
                           <br><p>Value: <span id="demo"></span> m</p>
 
                           <!-- Script for distance slider -->
@@ -179,7 +179,29 @@
               <!-- Shops content -->
               <div class="content">
               <h6>Filter by...</h6>
+              <input type="radio" name="shop-filter" id="btn-shop-all"> Any<br>
+              <input type="radio" name="shop-filter" id="btn-shop-name"> Name<br>
+              <input type="radio" name="shop-filter" id="btn-shop-type"> Category<br>
+              <!-- Dropdown options -->
+              <select id="shop-choice-dropdown" class="custom-select my-3" name="shop"></select><br>
+
+              <p>Distance from cinema:</p>
+                  <div class="slidecontainer">
+                  <input type="range" name="shop-dist" min="0" max="800" value="0" step="10" class="slider" id="myRange3">
+                  <br><p>Value: <span id="demo3"></span> m</p>
+
+                  <!-- Script for distance slider -->
+                  <script>
+                  var slider3 = document.getElementById("myRange3");
+                  var output3 = document.getElementById("demo3");
+                  output3.innerHTML = slider3.value;
+
+                  slider3.oninput = function() {
+                    output3.innerHTML = this.value;
+                  }
+                  </script>
               </div>
+            </div>
 
               <!-- 5th Collapsible: Public Travel -->
               <button form="none" class="collapsible"><h4>Public Transport</h4></button>
@@ -195,7 +217,7 @@
 
                     <p>Distance from cinema:</p>
                         <div class="slidecontainer">
-                        <input type="range" name="bus-dist" min="0" max="200" value="0" step="10" class="slider" id="myRange2">
+                        <input type="range" name="bus-dist" min="0" max="500" value="0" step="10" class="slider" id="myRange2">
                         <br><p>Value: <span id="demo2"></span> m</p>
 
                         <!-- Script for distance slider -->
@@ -215,7 +237,17 @@
               <button form="none" class="collapsible"><h4>Parking</h4></button>
               <!-- Travel content -->
               <div class="content">
-              <h6>Filter by...</h6>
+              <h6>Select parking zone type:</h6>
+              <input type="radio" name="parking" id="btn-park-cont" value='Controlled parking zone'> Controlled zone<br>
+              <input type="radio" name="parking" id="btn-park-pri" value='Priority parking area'> Priority zone<br>
+              <input type="radio" name="parking" id="btn-park-free" value='Free'> Free zone<br>
+              <br><p>How would you like to filter?</p>
+              <input type="radio" name="park-filter" id="btn-park-in" value=inside> Inside the zone<br>
+              <input type="radio" name="park-filter" id="btn-park-out" value=outside> Outside the zone<br>
+              <input type="radio" name="park-filter" id="btn-park-dist" value=distance> Distance from zone<br>
+
+              <!-- Distance dropdown -->
+              <select id="park-dist-choice-dropdown" class="custom-select my-3" name="park-dist"></select><br>
               </div>
 
               <!-- 7th Collapsible: Districts -->

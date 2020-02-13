@@ -6,6 +6,15 @@ s0092179.SECTORS SEC
 s0092179.BUSROUTES_4326
 s1983906.BUS_STOPS B_S
 """
+# Customised modules and functions
+import parking as park
+import restaurants as rest
+import shops
+import facilities as fac
+import buses
+import films
+
+# External packages
 import cgi
 import cgitb
 import cx_Oracle
@@ -24,36 +33,65 @@ with open('/web/s1434165/public_html/cgi-bin/sensitive/pw.txt', 'r') as f:
     pwd = f.readline().strip()
 
 def render_html():
+    """ Function to render the page, putting the map inside the template """
     env = Environment(loader=FileSystemLoader('.'))
     temp = env.get_template('index.html')
     inpFol = foliumMap()
     print(temp.render(map=inpFol))
 
 def foliumMap():
-    facilities, chp1 = facilitiesFilter()
-    film, chp2 = filmFilter()
-    rest, chp3 = restDistFilter()
-    bus, chp4 = busFilter()
+    """ Function to render the map with the query chosen """
+    query = QueryBuilder()
+
+    map1 = folium.Map(location = edinburgh_coords, zoom_start = 13)
+
+    conn = cx_Oracle.connect(user=user, password=pwd, dsn="geoslearn")
+    c = conn.cursor()
+    c.execute(query)
+    for row in c:
+        folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='red', icon='film')).add_to(map1)
+
+    print('<h6>Query: '+str(query)+'</h6>')
+    conn.close()
+
+    return map1.get_root().render()
+
+def QueryBuilder():
+    """ Function to build the SQL query based on user's choices or default """
+    facilities, chp1 = fac.Filter()
+    film, chp2 = films.Filter()
+    rests, chp3 = rest.DistFilter()
+    bus, chp4 = buses.Filter()
+    shop, chp5 = shops.DistFilter()
+    parks, chp6 = park.Filter()
 
     var1 = ''
     var2 = ''
     var3 = ''
+    var4 = ''
+    var5 = ''
 
     # if something has been selected as a filter
-    if 1 in (chp1,chp2,chp3,chp4):
+    if 1 in (chp1,chp2,chp3,chp4,chp5,chp6):
         where = 'WHERE ' # start a where statement
     else:
         where = '' # otherwise don't
 
     # if two filters have been selected, join them
-    if chp1 == 1 and any([chp2 == 1, chp3 ==1, chp4 == 1]):
+    if chp1 == 1 and any([chp2 == 1, chp3 ==1, chp4 == 1, chp5 ==1, chp6==1]):
         var1 = ' AND '
 
-    if chp2 == 1 and chp3 == 1:
+    if chp2 == 1 and any([chp3 == 1, chp4 == 1, chp5 ==1, chp6==1]):
         var2 = ' AND '
 
-    if chp3 and chp4 == 1:
+    if chp3 and any([chp4 == 1, chp5 ==1, chp6==1]):
         var3 = ' AND '
+
+    if chp4 and any([chp5 ==1, chp6==1]):
+        var4 = ' AND '
+
+    if chp5 and any([chp6==1]):
+        var5 = ' AND '
 
 
     # target data
@@ -67,170 +105,11 @@ def foliumMap():
     group = 'GROUP BY A.NAME, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X'
 
     sql = select + tables + innerjoin
-    filter = where + facilities + var1 + film + var2 + rest + var3 + bus + group
+    filters = where + facilities + var1 + film + var2 + rests + var3 + bus + var4 + shop + var5 + parks + group
 
-    map1 = folium.Map(location = edinburgh_coords, zoom_start = 13)
+    query = sql + filters
 
-    conn = cx_Oracle.connect(user=user, password=pwd, dsn="geoslearn")
-    c = conn.cursor()
-    c.execute(sql+filter)
-    for row in c:
-        folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='red', icon='film')).add_to(map1)
-    """
-    c.execute("SELECT B.STOP, B.GEOM.SDO_POINT.Y, B.GEOM.SDO_POINT.X FROM s1983906.BUS_STOPS B")
-    for row in c:
-        folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='green', icon='road')).add_to(map1)
-    """
-
-    print('<h6>Query: '+str(sql+filter)+'</h6>')
-    conn.close()
-
-    return map1.get_root().render()
-
-def restFilter():
-    choice = form.getvalue("rest")
-    chp = 1
-    filter = ''
-    test_char = ''
-    real_chars = ''
-
-    rest_dict = {
-    't': 'R.TYPE = ',
-    'n': 'R.NAME = '
-    }
-
-    if choice in (None,'all'):
-        chp = 0 # no choice
-    else: # else search for it
-        test_char = choice[0]
-        real_chars = choice[1:]
-        for j in rest_dict.keys():
-            if test_char == j: # select corresponding column
-                filter = rest_dict[j] + "'"+str(real_chars)+"' AND "
-
-    return filter, chp
-
-def restDistFilter():
-    rest_choice, ignore = restFilter()
-    dist_choice = form.getvalue("rest-dist")
-    sub_filter = ""
-    chp = 1
-
-    if dist_choice in (None, '0'):
-        sub_filter = sub_filter
-        chp = 0
-    else:
-        sub_filter = "A.NAME IN (SELECT A.NAME FROM CINEMAS A, s1987402.RESTAURANTS R WHERE "+str(rest_choice)+"SDO_GEOM.WITHIN_DISTANCE(A.GEOM, "+str(dist_choice)+", R.GEOM, 5, 'unit=METER') = 'TRUE') "
-
-    return sub_filter, chp
-
-def busFilter():
-    route_chp = 1
-    stop_chp = 1
-    filter = ''
-    column = ''
-    stop_filter = ''
-
-    route_choice = form.getvalue("route")
-    stop_choice = form.getvalue("stop")
-    bus_dist = form.getvalue("bus-dist")
-
-    if route_choice == None:
-        route_chp = 0
-
-    if stop_choice in (None,'any'):
-        stop_chp = 0
-        #query with buffer around bus route line
-
-    if stop_chp == 1:
-        stop_filter = "B_S.STOP = '"+str(stop_choice)+"' AND "
-        filter = "A.NAME IN (SELECT A.NAME FROM CINEMAS A, s1983906.BUS_STOPS B_S WHERE "+str(stop_filter)+"SDO_GEOM.WITHIN_DISTANCE(A.GEOM, "+str(bus_dist)+", B_S.GEOM, 5, 'unit=METER') = 'TRUE') "
-
-    return filter, route_chp
-
-def filmFilter():
-    """ Taking the user's choice of film and searching for it """
-    filter = ''
-    column = ''
-    real_chars = ''
-    choice = form.getvalue("film")
-    chp = 1 # flag to indicate if choice has been made
-
-    film_dict = {
-    't': 'B.TITLE = ',
-    'g': 'B.GENRE = ',
-    'a': 'B.AGE_RATING = '
-    }
-
-    if choice in (None,'all'):
-        chp = 0 # no choice
-    else: # else search for it
-        test_char = choice[0]
-        real_chars = choice[1:]
-        for j in film_dict.keys():
-            if test_char == j: # select corresponding column
-                filter = film_dict[j] + "'"+str(real_chars)+"' "
-
-
-
-    return filter, chp
-
-def facilitiesChoice():
-    """ Taking the user's choice(s) and selecting the relevant column """
-    chp = 1
-    fac_var = []
-    choices = form.getlist("facilities")
-
-    if isinstance(choices, list): # The user is requesting more than one item.
-        fac_var = fac_var.append(choices)
-    else:
-        fac_var = choices
-    # The user is requesting only one item.
-
-    if len(choices)<1: # if user has selected nothing
-        fac_var = [] # make blank
-        chp = 0
-    else:
-        fac_var = choices # else take the choices
-
-    crit = [] # empty list to fill with rows
-
-    # dict relating user variables to relevant columns
-    fac_filter_dict = {
-    'bar': 'A.BAR',
-    'popcorn': 'A.POPCORN',
-    'access': 'A.WHEELCHAIR_ACC',
-    'student': 'A.STUDENT_DISC'
-    }
-
-    # testing which user variable was selected
-    for i in fac_var:
-        for j in fac_filter_dict.keys():
-            if i == j: # select corresponding column
-                crit = crit + [fac_filter_dict[j]]
-
-    # return column name(s) for use in the query
-    return crit, chp
-
-def facilitiesFilter():
-    """ Taking user choice and integrating into SQL """
-
-    # set up the SQL
-    crit, chp = facilitiesChoice()
-    filter = ''
-
-    if chp == 0:
-        filter = ''
-    else:
-        var = ' AND ' # to join the criteria(s)
-
-    for i in crit:
-        if i == crit[-1]: #if its the last criteria
-            var = '' # no AND at the end
-        filter = filter + str(i) + "='y' " + var
-
-    # return completed query filter
-    return filter, chp
+    return query
 
 if __name__ == '__main__':
     print("Content-type: text/html\n")      #  Ensures that the webpage is rendered correctly using HTML code
