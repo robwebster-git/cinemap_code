@@ -1,5 +1,6 @@
 #!/web/s0092179/public_html/cgi-bin/cinemap/bin/python
 
+
 import cgitb
 import cx_Oracle
 cgitb.enable(format='text')
@@ -12,7 +13,6 @@ import json
 from branca.colormap import linear
 import branca.colormap as cm
 import random
-from datetime import time
 
 
 form = cgi.FieldStorage()
@@ -41,63 +41,34 @@ class Cinema:
 
 def render_html():
     env = Environment(loader=FileSystemLoader('.'))
-    temp = env.get_template('index_jess.html')
+    temp = env.get_template('index.html')
     inpFol = foliumMap()
     print(temp.render(map=inpFol))
 
 
 def foliumMap():
-
-    map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_start = 13)
+    
+    map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_start = 14)
 
     folium.TileLayer('cartodbpositron', name="CartoDB Positron", attr='Carto DB').add_to(map1)
     folium.TileLayer('cartodbdark_matter', name="CartoDB DarkMatter", attr='Carto DB').add_to(map1)
     folium.TileLayer('stamentoner', name="Stamen Toner", attr='Stamen Toner').add_to(map1)
 
-    plugins.LocateControl(auto_start=True, flyTo=True, returnToPrevBounds=True, enableHighAccuracy=True).add_to(map1)
-    plugins.Fullscreen(position='topright', title='Foolish screen', title_cancel='Return to normality', force_separate_button=True).add_to(map1)
+    plugins.LocateControl(auto_start=True).add_to(map1)
 
-    area_layer = folium.FeatureGroup(name='Areas of Edinburgh', show=False)
+    
+    area_layer = folium.FeatureGroup(name='Areas of Edinburgh')
+    area_sub_group = folium.plugins.FeatureGroupSubGroup(area_layer, 'Areas')
     bus_layer = folium.FeatureGroup(name='Bus Routes')
     cinema_layer = folium.FeatureGroup(name='Cinemas')
-    shop_layer = folium.FeatureGroup(name='Shops', show=False)
-    restaurant_layer = folium.FeatureGroup(name='Restaurants', show=False)
-    parking_layer = folium.FeatureGroup(name='Parking Zones', show=False)
+    shop_layer = folium.FeatureGroup(name='Shops')
+    restaurant_layer = folium.FeatureGroup(name='Restaurants')
+    #polycolours.add_to(map1)
 
-
-    #texto = form.getvalue("firstname")
-    #latitude = form.getvalue("lat")
-    #longitude = form.getvalue("lon")
-    #print(f"Name: {texto}")
-    #print(f"Lat: {latitude}")
-    #print(f"Lon: {longitude}")
     with open('../../../details.txt', 'r') as f:
         pwd = f.readline().strip()
     conn = cx_Oracle.connect(f"s0092179/{pwd}@geoslearn")
     c = conn.cursor()
-
-    longitude = -3.183051
-    latitude = 55.948506
-
-    c.execute(f"SELECT c.name from s1434165.cinemas c where SDO_GEOM.WITHIN_DISTANCE(c.geom, 800, SDO_GEOMETRY('POINT({longitude} {latitude})', 8307), 10, 'unit=METER') = 'TRUE'")
-    for row in c:
-        print(row)
-
-    c.execute("SELECT a.ogr_fid, a.\"Type\", a.\"Zone_No\", sdo_util.to_geojson(a.ora_geometry) FROM parking_8307 a")
-    for row in c:
-        id = int(row[0])
-        colour = 'yellow'
-        zone_no = row[2]
-        park_type = row[1]
-        if park_type == "Free":
-            colour = 'green'
-        elif park_type == "Controlled parking zone":
-            colour = 'red'
-        else:
-            colour = 'orange'
-        item = json.load(row[3])
-        folium.Choropleth(geo_data=item, popup="popup", line_color='orange', line_opacity=1, legend_name='Parking Areas', fill_opacity=0.3, fill_color=colour).add_to(parking_layer)
-
 
     c.execute("SELECT ogr_fid as id, naturalcom as name, sdo_util.to_geojson(ora_geometry) as jsongeometry FROM hoods_8307")
     jsons_4326 = []
@@ -110,6 +81,7 @@ def foliumMap():
         jsons_4326.append(item)
         area_id = f"area{row[0]}"
         area_name = row[1]
+        #folium.GeoJson(item, name=area_id, style_function = lambda x: style2).add_to(area_layer)
         folium.Choropleth(geo_data=item, name=name, popup="popup", line_color='yellow', line_opacity=1, legend_name='Edinburgh District', fill_opacity=0.6, fill_color=polycolours(id)).add_to(area_layer)
 
 
@@ -123,7 +95,6 @@ def foliumMap():
         if name == 2:
             folium.GeoJson(data, name=name, style_function = lambda x: style3).add_to(bus_layer)
 
-
     c.execute("SELECT UNIQUE a.CINEMA_ID, a.NAME, b.title, c.time1, c.time2, c.time3, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1434165.cinemas a, s1434165.films b, s1434165.cinefilmrelation c where c.film_id = b.film_id and c.cinema_id = a.cinema_id")
 
     cinemas_list = []
@@ -133,8 +104,6 @@ def foliumMap():
     cinema3 = None
     cinema4 = None
     cinema5 = None
-    cinema6 = None
-    cinema7 = None
 
     for row in c:
         (a, b, c2, d, e, f, g, h) = row
@@ -175,26 +144,14 @@ def foliumMap():
                 cinemas_list.append(cinema5)
             else:
                 cinema5.films.append(this_film)
-        if cine == 'cinema6':
-            if cinema6 is None:
-                cinema6 = Cinema(a, b, g, h)
-                cinema6.films.append(this_film)
-                cinemas_list.append(cinema6)
-            else:
-                cinema6.films.append(this_film)
-        if cine == 'cinema7':
-            if cinema7 is None:
-                cinema7 = Cinema(a, b, g, h)
-                cinema7.films.append(this_film)
-                cinemas_list.append(cinema7)
-            else:
-                cinema7.films.append(this_film)
 
     for cin in cinemas_list:
-        popup_text = f"<h3>{cin.name}</h3><h5>Showing Times</h5>"
+        popup_text = f"<h3>{cin.name}</h3><br>"
         for film in cin.films:
+            #print(cin.name, film)
             popup_text += f"<tr>{film[0]}</tr><br>"
         cin.popup_text = popup_text
+        #print(cin.popup_text)
         html = folium.Html(cin.popup_text, script=True)
         popup = folium.Popup(html, max_width=2650)
         folium.Marker([cin.lat, cin.lon], popup=popup, icon=folium.Icon(color='blue', icon='glyphicon-facetime-video')).add_to(cinema_layer)
@@ -204,43 +161,33 @@ def foliumMap():
         id = row[0]
         name = row[1]
         category = row[2]
-        opentime = time(int(row[3]), 0)
-        formatted_open_time = opentime.strftime("%H:%M")
-        closetime = time(int(row[4]), 0).strftime("%H:%M")
-        formatted_close_time = closetime
+        opentime = row[3]
+        closetime = row[4]
         lon = row[5]
         lat = row[6]
-        popup_text = f"<h3>{name}</h3><tr><td><h5>Opening Times</h5>{formatted_open_time}<b> to </b>{formatted_close_time}</td></tr>"
-        html = folium.Html(popup_text, script=True)
-        popup = folium.Popup(html, max_width=2650)
-        folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='green', icon='glyphicon-tag')).add_to(shop_layer)
+        folium.Marker([lat, lon], popup=f"{name} Opening Time: {opentime}\n Closing Time: {closetime}", icon=folium.Icon(color='green', icon='glyphicon-tag')).add_to(shop_layer)
 
     c.execute("SELECT a.REST_ID, a.NAME, a.TYPE, a.OPEN, a.CLOSE, a.RATING, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1987402.restaurants a")
     for row in c:
         id = row[0]
         name = row[1]
         type = row[2]
-        opentime = time(int(row[3]), 0)
-        formatted_open_time = opentime.strftime("%H:%M")
-        closetime = time(int(row[4]), 0).strftime("%H:%M")
-        formatted_close_time = closetime
+        opentime = row[3]
+        closetime = row[4]
         rating = row[5]
         lon = row[6]
         lat = row[7]
-        popup_text = f"<h3>{name}</h3><tr><td><h5>Opening Times</h5>{formatted_open_time} to {formatted_close_time}</td></tr>"
-        html = folium.Html(popup_text, script=True)
-        popup = folium.Popup(html, max_width=2650)
-        folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='red', icon='glyphicon-cutlery')).add_to(restaurant_layer)
+        folium.Marker([lat, lon], popup=f"{name}\nOpening Time: {opentime}\nClosing Time: {closetime}\nRating: {rating}", icon=folium.Icon(color='red', icon='glyphicon-cutlery')).add_to(restaurant_layer)
 
     conn.close()
 
     area_layer.add_to(map1)
+    area_sub_group.add_to(map1)
     bus_layer.add_to(map1)
     cinema_layer.add_to(map1)
     shop_layer.add_to(map1)
     restaurant_layer.add_to(map1)
-    parking_layer.add_to(map1)
-
+    
     #minimap = plugins.MiniMap()
     #map1.add_child(minimap)
 

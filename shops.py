@@ -37,7 +37,7 @@ def DistFilter():
         sub_filter = sub_filter
         chp = 0
     else:
-        sub_filter = "A.NAME IN (SELECT A.NAME FROM CINEMAS A, \
+        sub_filter = "A.NAME IN (SELECT A.NAME FROM s1434165.CINEMAS A, \
         s1987402.SHOPS S WHERE "+str(rest_choice)+"\
         SDO_GEOM.WITHIN_DISTANCE(A.GEOM, "+str(dist_choice)+", \
         S.GEOM, 10, 'unit=METER') = 'TRUE') "

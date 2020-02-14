@@ -23,12 +23,12 @@ def Filter():
 
     if stop_chp == 1 and route_chp == 1:
         stop_filter = "B_S.STOP = '"+str(stop_choice)+"' AND "
-        filter = "A.NAME IN (SELECT A.NAME FROM CINEMAS A,\
+        filter = "A.NAME IN (SELECT A.NAME FROM s1434165.CINEMAS A,\
          s1983906.BUS_STOPS B_S WHERE "+str(stop_filter)+"\
          SDO_GEOM.WITHIN_DISTANCE(A.GEOM, "+str(bus_dist)+",\
           B_S.GEOM, 5, 'unit=METER') = 'TRUE') "
     if stop_chp == 0 and route_chp == 1:
-        filter = "A.NAME IN (SELECT A.NAME FROM CINEMAS A WHERE\
+        filter = "A.NAME IN (SELECT A.NAME FROM s1434165.CINEMAS A WHERE\
          SDO_GEOM.RELATE(A.GEOM, 'ANYINTERACT',\
           (SELECT SDO_GEOM.SDO_BUFFER(B.ORA_GEOMETRY,\
            "+str(bus_dist)+", 5) FROM s0092179.BUSROUTES_8307 B\

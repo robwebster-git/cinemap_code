@@ -13,10 +13,20 @@ from branca.colormap import linear
 import branca.colormap as cm
 import random
 from datetime import time
+#import pandas as pd
 
+# Customised modules and functions
+import parking as park
+import restaurants as rest
+import shops
+import facilities as fac
+import buses
+import films
+import districts as hoods
+
+user = "s1434165"
 
 form = cgi.FieldStorage()
-
 edinburgh_coords = [55.948795,-3.200226]
 
 polycolours = linear.GnBu_06.scale(0,120)
@@ -46,8 +56,75 @@ def render_html():
     print(temp.render(map=inpFol))
 
 
-def foliumMap():
+def user_location(lat, lon, distance):
+    c.execute(f"SELECT c.name from s1434165.cinemas c where SDO_GEOM.WITHIN_DISTANCE(c.geom, {distance}, SDO_GEOMETRY('POINT({lon} {lat})', 8307), 10, 'unit=METER') = 'TRUE'")
+    for row in c:
+        print(row)
 
+def QueryBuilder():
+    """ Function to build the SQL query based on user's choices or default """
+    facilities, chp1 = fac.Filter()
+    film, chp2 = films.Filter()
+    rests, chp3 = rest.DistFilter()
+    bus, chp4 = buses.Filter()
+    shop, chp5 = shops.DistFilter()
+    parks, chp6 = park.Filter()
+    hood, chp7 = hoods.Filter()
+
+    var1 = ''
+    var2 = ''
+    var3 = ''
+    var4 = ''
+    var5 = ''
+    var6 = ''
+
+    # if something has been selected as a filter
+    if 1 in (chp1,chp2,chp3,chp4,chp5,chp6,chp7):
+        where = 'WHERE ' # start a where statement
+    else:
+        where = '' # otherwise don't
+
+    # if two filters have been selected, join them
+    if chp1 == 1 and any([chp2 == 1, chp3 ==1, chp4 == 1, chp5 ==1, chp6==1, chp7==1]):
+        var1 = ' AND '
+
+    if chp2 == 1 and any([chp3 == 1, chp4 == 1, chp5 ==1, chp6==1, chp7==1]):
+        var2 = ' AND '
+
+    if chp3 and any([chp4 == 1, chp5 ==1, chp6==1, chp7==1]):
+        var3 = ' AND '
+
+    if chp4 and any([chp5 ==1, chp6==1, chp7==1]):
+        var4 = ' AND '
+
+    if chp5 and any([chp6==1, chp7==1]):
+        var5 = ' AND '
+
+    if chp6==1 and chp7==1:
+        var6 = ' AND '
+
+    # target data
+    select = 'SELECT A.NAME, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X '
+    # target table(s)
+    tables = 'FROM s1434165.CINEMAS A '
+    # inner join for M2M table
+    innerjoin = 'INNER JOIN s1434165.CINEFILMRELATION AB ON A.CINEMA_ID = AB.CINEMA_ID INNER JOIN s1434165.FILMS B ON B.FILM_ID = AB.FILM_ID '
+    extjoins = 's1987402.RESTAURANTS R, s1987402.SHOPS S '
+    # group results to avoid redundant repeats
+    group = 'GROUP BY A.NAME, A.GEOM.SDO_POINT.Y, A.GEOM.SDO_POINT.X'
+
+    sql = select + tables + innerjoin
+    filters = where + facilities + var1 + film + var2 + rests + var3 + bus + var4 + shop + var5 + parks + var6 + hood + group
+
+    query = sql + filters
+
+    return query
+
+
+def foliumMap():
+    """ Function to render the map with the query chosen """
+    query = QueryBuilder()
+    print(query)
     map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_start = 13)
 
     folium.TileLayer('cartodbpositron', name="CartoDB Positron", attr='Carto DB').add_to(map1)
@@ -57,20 +134,14 @@ def foliumMap():
     plugins.LocateControl(auto_start=True, flyTo=True, returnToPrevBounds=True, enableHighAccuracy=True).add_to(map1)
     plugins.Fullscreen(position='topright', title='Foolish screen', title_cancel='Return to normality', force_separate_button=True).add_to(map1)
 
+    results_layer = folium.FeatureGroup(name="Results")
     area_layer = folium.FeatureGroup(name='Areas of Edinburgh', show=False)
-    bus_layer = folium.FeatureGroup(name='Bus Routes')
-    cinema_layer = folium.FeatureGroup(name='Cinemas')
+    bus_layer = folium.FeatureGroup(name='Bus Routes', show=False)
+    cinema_layer = folium.FeatureGroup(name='Cinemas', show=False)
     shop_layer = folium.FeatureGroup(name='Shops', show=False)
     restaurant_layer = folium.FeatureGroup(name='Restaurants', show=False)
     parking_layer = folium.FeatureGroup(name='Parking Zones', show=False)
 
-
-    #texto = form.getvalue("firstname")
-    #latitude = form.getvalue("lat")
-    #longitude = form.getvalue("lon")
-    #print(f"Name: {texto}")
-    #print(f"Lat: {latitude}")
-    #print(f"Lon: {longitude}")
     with open('../../../details.txt', 'r') as f:
         pwd = f.readline().strip()
     conn = cx_Oracle.connect(f"s0092179/{pwd}@geoslearn")
@@ -78,10 +149,6 @@ def foliumMap():
 
     longitude = -3.183051
     latitude = 55.948506
-
-    c.execute(f"SELECT c.name from s1434165.cinemas c where SDO_GEOM.WITHIN_DISTANCE(c.geom, 800, SDO_GEOMETRY('POINT({longitude} {latitude})', 8307), 10, 'unit=METER') = 'TRUE'")
-    for row in c:
-        print(row)
 
     c.execute("SELECT a.ogr_fid, a.\"Type\", a.\"Zone_No\", sdo_util.to_geojson(a.ora_geometry) FROM parking_8307 a")
     for row in c:
@@ -232,8 +299,15 @@ def foliumMap():
         popup = folium.Popup(html, max_width=2650)
         folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='red', icon='glyphicon-cutlery')).add_to(restaurant_layer)
 
+    c.execute(query)
+    for row in c:
+        print(row)
+        folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='purple', icon='glyphicon-ok')).add_to(results_layer)
+
     conn.close()
 
+
+    results_layer.add_to(map1)
     area_layer.add_to(map1)
     bus_layer.add_to(map1)
     cinema_layer.add_to(map1)
@@ -245,6 +319,18 @@ def foliumMap():
     #map1.add_child(minimap)
 
     folium.LayerControl().add_to(map1)
+
+
+
+
+    #texto = form.getvalue("firstname")
+    #latitude = form.getvalue("lat")
+    #longitude = form.getvalue("lon")
+    #print(f"Name: {texto}")
+    #print(f"Lat: {latitude}")
+    #print(f"Lon: {longitude}")
+
+    #user_location(distance, latitude, longitude)
 
     return map1.get_root().render()
 
