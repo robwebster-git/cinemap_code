@@ -47,7 +47,7 @@ def render_html():
 
 
 def foliumMap():
-    
+
     map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_start = 14)
 
     folium.TileLayer('cartodbpositron', name="CartoDB Positron", attr='Carto DB').add_to(map1)
@@ -56,7 +56,7 @@ def foliumMap():
 
     plugins.LocateControl(auto_start=True).add_to(map1)
 
-    
+
     area_layer = folium.FeatureGroup(name='Areas of Edinburgh')
     area_sub_group = folium.plugins.FeatureGroupSubGroup(area_layer, 'Areas')
     bus_layer = folium.FeatureGroup(name='Bus Routes')
@@ -187,7 +187,7 @@ def foliumMap():
     cinema_layer.add_to(map1)
     shop_layer.add_to(map1)
     restaurant_layer.add_to(map1)
-    
+
     #minimap = plugins.MiniMap()
     #map1.add_child(minimap)
 

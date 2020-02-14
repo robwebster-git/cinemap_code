@@ -6,14 +6,7 @@ s0092179.SECTORS SEC
 s0092179.BUSROUTES_4326
 s1983906.BUS_STOPS B_S
 """
-# Customised modules and functions
-import parking as park
-import restaurants as rest
-import shops
-import facilities as fac
-import buses
-import films
-import districts as hoods
+
 
 # External packages
 import cgi
@@ -22,12 +15,11 @@ import cx_Oracle
 cgitb.enable(format='text')
 from jinja2 import Environment, FileSystemLoader
 import folium
-import pandas as pd
+
 import os
 import json
 
-edinburgh_coords = [55.948795,-3.200226]
-user = "s1434165"
+
 form = cgi.FieldStorage()
 
 with open('/web/s1434165/public_html/cgi-bin/sensitive/pw.txt', 'r') as f:
