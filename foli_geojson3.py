@@ -47,8 +47,8 @@ def render_html():
 
 
 def foliumMap():
-    
-    map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_start = 14)
+
+    map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_start = 13)
 
     folium.TileLayer('cartodbpositron', name="CartoDB Positron", attr='Carto DB').add_to(map1)
     folium.TileLayer('cartodbdark_matter', name="CartoDB DarkMatter", attr='Carto DB').add_to(map1)
@@ -57,28 +57,46 @@ def foliumMap():
     plugins.LocateControl(auto_start=True, flyTo=True, returnToPrevBounds=True, enableHighAccuracy=True).add_to(map1)
     plugins.Fullscreen(position='topright', title='Foolish screen', title_cancel='Return to normality', force_separate_button=True).add_to(map1)
 
-
-    area_layer = folium.FeatureGroup(name='Areas of Edinburgh')
+    area_layer = folium.FeatureGroup(name='Areas of Edinburgh', show=False)
     bus_layer = folium.FeatureGroup(name='Bus Routes')
     cinema_layer = folium.FeatureGroup(name='Cinemas')
-    shop_layer = folium.FeatureGroup(name='Shops')
-    restaurant_layer = folium.FeatureGroup(name='Restaurants')
-    parking_layer = folium.FeatureGroup(name='Parking Zones')
+    shop_layer = folium.FeatureGroup(name='Shops', show=False)
+    restaurant_layer = folium.FeatureGroup(name='Restaurants', show=False)
+    parking_layer = folium.FeatureGroup(name='Parking Zones', show=False)
 
+
+    #texto = form.getvalue("firstname")
+    #latitude = form.getvalue("lat")
+    #longitude = form.getvalue("lon")
+    #print(f"Name: {texto}")
+    #print(f"Lat: {latitude}")
+    #print(f"Lon: {longitude}")
     with open('../../../details.txt', 'r') as f:
         pwd = f.readline().strip()
     conn = cx_Oracle.connect(f"s0092179/{pwd}@geoslearn")
     c = conn.cursor()
 
-    c.execute("SELECT ogr_fid, 'Type', 'Zone_No', sdo_util.to_geojson(ora_geometry) FROM parking_8307")
+    longitude = -3.183051
+    latitude = 55.948506
+
+    c.execute(f"SELECT c.name from s1434165.cinemas c where SDO_GEOM.WITHIN_DISTANCE(c.geom, 800, SDO_GEOMETRY('POINT({longitude} {latitude})', 8307), 10, 'unit=METER') = 'TRUE'")
+    for row in c:
+        print(row)
+
+    c.execute("SELECT a.ogr_fid, a.\"Type\", a.\"Zone_No\", sdo_util.to_geojson(a.ora_geometry) FROM parking_8307 a")
     for row in c:
         id = int(row[0])
-        colour = colours[(id%5)]
-        style2 = {'fillColor': '#fc7303', 'color': colour, 'weight': 2}
-        zone_no = row[1]
-        park_type = row[2]
+        colour = 'yellow'
+        zone_no = row[2]
+        park_type = row[1]
+        if park_type == "Free":
+            colour = 'green'
+        elif park_type == "Controlled parking zone":
+            colour = 'red'
+        else:
+            colour = 'orange'
         item = json.load(row[3])
-        folium.Choropleth(geo_data=item, popup="popup", line_color='orange', line_opacity=1, legend_name='Parking Areas', fill_opacity=0.6, fill_color=colour).add_to(parking_layer)
+        folium.Choropleth(geo_data=item, popup="popup", line_color='orange', line_opacity=1, legend_name='Parking Areas', fill_opacity=0.3, fill_color=colour).add_to(parking_layer)
 
 
     c.execute("SELECT ogr_fid as id, naturalcom as name, sdo_util.to_geojson(ora_geometry) as jsongeometry FROM hoods_8307")
@@ -94,7 +112,7 @@ def foliumMap():
         area_name = row[1]
         folium.Choropleth(geo_data=item, name=name, popup="popup", line_color='yellow', line_opacity=1, legend_name='Edinburgh District', fill_opacity=0.6, fill_color=polycolours(id)).add_to(area_layer)
 
-        
+
 
     c.execute("SELECT OGR_FID, sdo_util.to_geojson(ora_geometry) as jsongeometry from busroutes_8307")
     for row in c:
@@ -115,6 +133,8 @@ def foliumMap():
     cinema3 = None
     cinema4 = None
     cinema5 = None
+    cinema6 = None
+    cinema7 = None
 
     for row in c:
         (a, b, c2, d, e, f, g, h) = row
@@ -155,6 +175,20 @@ def foliumMap():
                 cinemas_list.append(cinema5)
             else:
                 cinema5.films.append(this_film)
+        if cine == 'cinema6':
+            if cinema6 is None:
+                cinema6 = Cinema(a, b, g, h)
+                cinema6.films.append(this_film)
+                cinemas_list.append(cinema6)
+            else:
+                cinema6.films.append(this_film)
+        if cine == 'cinema7':
+            if cinema7 is None:
+                cinema7 = Cinema(a, b, g, h)
+                cinema7.films.append(this_film)
+                cinemas_list.append(cinema7)
+            else:
+                cinema7.films.append(this_film)
 
     for cin in cinemas_list:
         popup_text = f"<h3>{cin.name}</h3><h5>Showing Times</h5>"
@@ -206,7 +240,7 @@ def foliumMap():
     shop_layer.add_to(map1)
     restaurant_layer.add_to(map1)
     parking_layer.add_to(map1)
-    
+
     #minimap = plugins.MiniMap()
     #map1.add_child(minimap)
 
