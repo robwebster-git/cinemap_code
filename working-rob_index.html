@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <style type="text/css">
+        html, body {
+            height:100%;
+        }
+        .container {
+            height: 80%;
+        }
+        #maprow {
+            height: 100%;
+        }
+        #map1 {
+            margin: 0px;
+            padding: 0px;
+            height:100%;
+            border: 1px dashed gray;
+        }
+        #form1 {
+            z-index: 2147483647 !important;
+            border-top: 1px dashed gray;
+            border-left: 1px dashed gray;
+            border-bottom: 1px dashed gray;
+        }
+    </style>
+    <title>CineMap</title>
+  </head>
+  <body>
+      <div class="container">
+        <div class="row text-center">
+              <div class="col"><h1></h1>
+              </div>
+        </div>
+        <div class="row" id="maprow">
+            <div class="col-sm-4 col-xs-12" id="form1">
+              <form id="form2" action="./foli_geojson3.py" method="get">
+                <h2></h2>
+                <p id="location"></p>
+                First name:<br>
+                <input type="text" name="firstname"><br>
+                <input class="btn btn-primary" type="submit" value="Submit">
+              </form>
+            </div>
+            <div class="col-sm-8 col-xs-12" id="map1">{{map}}</div>
+        </div>
+      </div>
+
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script>
+    var lati;
+    var long;
+    var lat = document.createElement("input");
+    lat.setAttribute("type", "hidden");
+    lat.setAttribute("name", "lat");
+    var lon = document.createElement("input");
+    lon.setAttribute("type", "hidden");
+    lon.setAttribute("name", "lon");
+    var x = document.getElementById("location");
+      function getLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(showPosition);
+        } else {
+          x.innerHTML = "Geolocation is not supported by this browser.";
+        }
+      }
+      function showPosition(position) {
+        lati = position.coords.latitude
+        long = position.coords.longitude
+        //console.log("position is : ", lati, long)
+        x.innerHTML = "Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude;
+        lat.setAttribute("value", lati);
+        lon.setAttribute("value", long)
+      }
+      console.log(getLocation())
+
+      //append to form element that you want .
+      document.getElementById("form2").appendChild(lat);
+      document.getElementById("form2").appendChild(lon);
+
+      /*var mapid = document.querySelectorAll('div[class^="folium-map"]')
+      var mapin = mapid[0].id
+      var marker = L.marker([position.coords.latitude, position.coords.longitude]).addTo(mapin);
+      console.log("mapin, mapid[0].id", mapin, mapid[0].id)
+      console.log(getLocation())*/
+</script>
+  </body>
+</html>
