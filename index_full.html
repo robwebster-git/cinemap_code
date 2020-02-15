@@ -1,0 +1,380 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript"></script>
+    <script src="https://www.geos.ed.ac.uk/~s1434165/static/js/asdm_dropdown.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://www.geos.ed.ac.uk/~s1434165/static/css/grid.css">
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <style type="text/css">
+        html, body {
+            /*background-color: #f71e5b;*/
+            height:100%;
+            margin: 0px;
+        }
+        #maprow {
+            height: 100%;
+            padding: 5px 10px;
+            padding-top: 0px;
+            margin-top: 0px;
+        }
+        #map1 {
+            margin-left: 5px;
+            margin-right: 5px;
+            padding: 0px;
+            height:90vh;
+            margin-top: 0px;
+        }
+        #form1 {
+          margin-top: 100px;
+          padding: 0px 10px;
+        }
+          .slidecontainer {
+            width: 100%;
+          }
+
+          .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+          }
+
+          .slider:hover {
+            opacity: 1;
+          }
+
+          .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 100%;
+            background: #00C1BB;
+            cursor: pointer;
+          }
+
+          .slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            background: #4CAF50;
+            cursor: pointer;
+          }
+          .collapsible {
+            margin-bottom: 4px;
+            background-color: white;
+            color: #f71e5b;
+            cursor: pointer;
+            width: 100%;
+            border: 1px solid #f71e5b;
+            border-collapse: collapse;
+            text-align: left;
+            outline: none;
+          }
+
+          .active, .collapsible:hover {
+            background-color: #f71e5b;
+            color: white;
+          }
+
+          .content {
+            padding: 0px 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            background-color: #f1f1f1;
+          }
+          .collapsible:after {
+            font-size: 13px;
+            /*content: '\02795'; /* Unicode character for "plus" sign (+) */
+            color: white;
+            float: right;
+          }
+
+          .active:after {
+            /*content: "\2796"; /* Unicode character for "minus" sign (-) */
+          }
+          .short-col {
+            position: fixed;
+            top: 70px;
+            left: 30px;
+            width: 20%;
+            z-index: 1000;
+            padding: 0 0px;
+          }
+
+          .btn-primary {
+            color: #f71e5b;
+            margin-top: 20px;
+            width: 250px;
+          }
+          .title {
+            width: 500px;
+            height: 13vh;
+            margin-left: 40px;
+          }
+      </style>
+
+
+            <title>CineMap</title>
+          </head>
+
+  <body>
+      <div class="title" id="logo">
+        <img src="../../cinemap_logo_map.png" style="width:60px;height:80px;z-index:1001; float:left;">
+        <h1 style="margin-top:20px;padding-top:20px;color:#f71e5b;">CineMap</h1>
+      </div>
+      <hr style="border:1px solid #f71e5b; padding: 0px; margin: 0px;">
+        <div class="row" id="maprow">
+
+            <div class="short-col" id="form1">
+
+
+              <!-- Opening the form for all selections -->
+              <form name="options-form" action="./cinemapper.py" method="get">
+
+              <!-- 1st Collapsible: Cinema Facilities -->
+              <button form="none" class="collapsible"><h4>Cinema Facilities</h4></button>
+              <!-- Facilities content -->
+              <div class="content" id="facilities-div"><br>
+                  <input type="checkbox" name="facilities" value="bar"> Bar<br>
+                  <input type="checkbox" name="facilities" value="popcorn"> Popcorn<br>
+                  <input type="checkbox" name="facilities" value="access"> Wheelchair Access<br>
+                  <input type="checkbox" name="facilities" value="student"> Student Discount<br><br>
+              </div>
+
+              <!-- 2nd Collapsible: Films -->
+              <button form="none" class="collapsible"><h4>Films</h4></button>
+              <!-- Films content -->
+              <div class="content" id="film-div">
+                <h6>Filter by..</h6>
+                    <input type="radio" name="film-filter" id="btn-film-all"> Any<br>
+                    <input type="radio" name="film-filter" id="btn-film-title"> Title<br>
+                    <input type="radio" name="film-filter" id="btn-film-genre"> Genre<br>
+                    <input type="radio" name="film-filter" id="btn-film-age"> Age Rating<br>
+                    <!-- Dropdown options -->
+                    <select id="film-choice-dropdown" class="custom-select my-3" name="film"></select><br>
+              </div>
+
+
+            <!-- 3rd Collapsible: Restaurants -->
+            <button form="none" class="collapsible"><h4>Restaurants</h4></button>
+            <!-- Restaurant content -->
+            <div class="content" id="rest-div">
+                <h6>Filter by...</h6>
+                      <input type="radio" name="rest-filter" id="btn-rest-all"> Any<br>
+                      <input type="radio" name="rest-filter" id="btn-rest-name"> Name<br>
+                      <input type="radio" name="rest-filter" id="btn-rest-type"> Type<br>
+                      <!-- Dropdown options -->
+                      <select id="rest-choice-dropdown" class="custom-select my-3" name="rest"></select><br>
+
+                      <p>Distance from cinema:</p>
+                          <div class="slidecontainer">
+                          <input type="range" name="rest-dist" min="0" max="800" value="0" step="10" class="slider" id="myRange">
+                          <br><p>Value: <span id="demo"></span> m</p>
+
+                          <!-- Script for distance slider -->
+                          <script>
+                          var slider = document.getElementById("myRange");
+                          var output = document.getElementById("demo");
+                          output.innerHTML = slider.value;
+
+                          slider.oninput = function() {
+                            output.innerHTML = this.value;
+                          }
+                          </script>
+                    </div>
+                  </div>
+
+
+                  <!-- User Location Query  -->
+                  <button form="none" class="collapsible"><h4>Search Close to Me</h4></button>
+                  <!-- User location content -->
+                  <div class="content" id="user-div">
+                      <h6>Filter by...</h6>
+
+                            <p>Distance from me:</p>
+                                <div class="slidecontainer">
+                                <input type="range" name="user-dist" min="0" max="4000" value="0" step="10" class="slider" id="myRange4">
+                                <br><p>Value: <span id="demo4"></span> m</p>
+
+                                <!-- Script for distance slider -->
+                                <script>
+                                var slider4 = document.getElementById("myRange4");
+                                var output4 = document.getElementById("demo4");
+                                output4.innerHTML = slider4.value;
+
+                                slider4.oninput = function() {
+                                  output4.innerHTML = this.value;
+                                }
+                                </script>
+                          </div>
+                        </div>
+
+
+
+
+
+
+
+
+              <!-- 4th Collapsible: Shops -->
+              <button form="none" class="collapsible"><h4>Shops</h4></button>
+              <!-- Shops content -->
+              <div class="content">
+              <h6>Filter by...</h6>
+              <input type="radio" name="shop-filter" id="btn-shop-all"> Any<br>
+              <input type="radio" name="shop-filter" id="btn-shop-name"> Name<br>
+              <input type="radio" name="shop-filter" id="btn-shop-type"> Category<br>
+              <!-- Dropdown options -->
+              <select id="shop-choice-dropdown" class="custom-select my-3" name="shop"></select><br>
+
+              <p>Distance from cinema:</p>
+                  <div class="slidecontainer">
+                  <input type="range" name="shop-dist" min="0" max="800" value="0" step="10" class="slider" id="myRange3">
+                  <br><p>Value: <span id="demo3"></span> m</p>
+
+                  <!-- Script for distance slider -->
+                  <script>
+                  var slider3 = document.getElementById("myRange3");
+                  var output3 = document.getElementById("demo3");
+                  output3.innerHTML = slider3.value;
+
+                  slider3.oninput = function() {
+                    output3.innerHTML = this.value;
+                  }
+                  </script>
+              </div>
+            </div>
+
+              <!-- 5th Collapsible: Public Travel -->
+              <button form="none" class="collapsible"><h4>Public Transport</h4></button>
+              <!-- Travel content -->
+              <div class="content">
+                  <h6>Bus Route Listings:</h6>
+                    <input type="radio" name="route" id="btn-route-one" value=1> 1<br>
+                    <input type="radio" name="route" id="btn-route-two" value=2> 2<br>
+
+                    <h6>Filter by stop?</h6>
+                    <!-- Dropdown options -->
+                    <select id="bus-choice-dropdown" class="custom-select my-3" name="stop"></select><br>
+
+                    <p>Distance from cinema:</p>
+                        <div class="slidecontainer">
+                        <input type="range" name="bus-dist" min="0" max="500" value="0" step="10" class="slider" id="myRange2">
+                        <br><p>Value: <span id="demo2"></span> m</p>
+
+                        <!-- Script for distance slider -->
+                        <script>
+                        var slider2 = document.getElementById("myRange2");
+                        var output2 = document.getElementById("demo2");
+                        output2.innerHTML = slider2.value;
+
+                        slider2.oninput = function() {
+                          output2.innerHTML = this.value;
+                        }
+                        </script>
+                      </div>
+                    </div>
+
+              <!-- 6th Collapsible: Parking -->
+              <button form="none" class="collapsible"><h4>Parking</h4></button>
+              <!-- Travel content -->
+              <div class="content">
+              <h6>Select parking zone type:</h6>
+              <input type="radio" name="parking" id="btn-park-cont" value='Controlled parking zone'> Controlled zone<br>
+              <input type="radio" name="parking" id="btn-park-pri" value='Priority parking area'> Priority zone<br>
+              <input type="radio" name="parking" id="btn-park-free" value='Free'> Free zone<br>
+              <br><p>How would you like to filter?</p>
+              <input type="radio" name="park-filter" id="btn-park-in" value=inside> Inside the zone<br>
+              <input type="radio" name="park-filter" id="btn-park-out" value=outside> Outside the zone<br>
+              <input type="radio" name="park-filter" id="btn-park-dist" value=distance> Distance from zone (m)<br>
+
+              <!-- Distance dropdown -->
+              <select id="park-dist-choice-dropdown" class="custom-select my-3" name="park-dist"></select><br>
+              </div>
+
+              <!-- 7th Collapsible: Districts -->
+              <button form="none" class="collapsible"><h4>Districts</h4></button>
+              <!-- District content -->
+              <div class="content">
+              <h5>Cinemas which are </h5>
+              <input type="radio" name="district-filter" id="btn-dist-not-in" value=not-in> not in<br>
+              <input type="radio" name="district-filter" id="btn-dist-in" value=in> in<br>
+              <input type="radio" name="district-filter" id="btn-dist-adj" value=adj> in and adjacent to<br>
+              <br><p>the following district:</p>
+              <!-- Selecting district name -->
+              <select id="district-choice-dropdown" class="custom-select my-3" name="district-name"></select><br>
+            </div>
+
+
+
+              <!-- Creating collapsible content-->
+              <script>
+              var coll = document.getElementsByClassName("collapsible");
+              var i;
+
+              for (i = 0; i < coll.length; i++) {
+                coll[i].addEventListener("click", function() {
+                  this.classList.toggle("active");
+                  var content = this.nextElementSibling;
+                  if (content.style.maxHeight){
+                    content.style.maxHeight = null;
+                  } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                  }
+                });
+              }
+              </script>
+              <button class="collapsible" style="margin:10 10; height:50px; color:white;background-color:#f71e5b;" type="submit" id="submit_btn" onClick="this.form.submit()">Submit Preferences...</button>
+            </div>
+
+            <div class="col span-1-of-2" id="map1">{{map}}</div>
+
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script>
+    var lati;
+    var long;
+    var lat = document.createElement("input");
+    lat.setAttribute("type", "hidden");
+    lat.setAttribute("name", "lat");
+    var lon = document.createElement("input");
+    lon.setAttribute("type", "hidden");
+    lon.setAttribute("name", "lon");
+    var x = document.getElementById("location");
+      function getLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(showPosition);
+        } else {
+          x.innerHTML = "Geolocation is not supported by this browser.";
+        }
+      }
+      function showPosition(position) {
+        lati = position.coords.latitude
+        long = position.coords.longitude
+        //console.log("position is : ", lati, long)
+        //x.innerHTML = "Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude;
+        lat.setAttribute("value", lati);
+        lon.setAttribute("value", long)
+      }
+      console.log(getLocation())
+
+      //append to form element that you want .
+      document.getElementById("options-form").appendChild(lat);
+      document.getElementById("options-form").appendChild(lon);
+</script>
+  </body>
+</html>

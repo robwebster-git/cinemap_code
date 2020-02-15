@@ -23,10 +23,9 @@ import buses
 import films
 import districts as hoods
 
-#user = "s1434165"
 
 form = cgi.FieldStorage()
-edinburgh_coords = [55.948795,-3.200226]
+edinburgh_coords = [55.936795,-3.220226]
 
 polycolours = linear.GnBu_06.scale(0,120)
 polycolours.caption = 'Areas of Edinburgh'
@@ -52,7 +51,7 @@ class Cinema:
 
 def render_html():
     env = Environment(loader=FileSystemLoader('.'))
-    temp = env.get_template('index_final.html')
+    temp = env.get_template('index_full.html')
     inpFol = foliumMap()
     print(temp.render(map=inpFol))
 
@@ -150,13 +149,13 @@ def foliumMap():
 
 
 
-    map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_start = 13)
+    map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_control=False, zoom_start = 13)
 
     folium.TileLayer('cartodbpositron', name="CartoDB Positron", attr='Carto DB').add_to(map1)
     folium.TileLayer('cartodbdark_matter', name="CartoDB DarkMatter", attr='Carto DB').add_to(map1)
     folium.TileLayer('stamentoner', name="Stamen Toner", attr='Stamen Toner').add_to(map1)
 
-    plugins.LocateControl(auto_start=True, flyTo=False, returnToPrevBounds=True, enableHighAccuracy=True).add_to(map1)
+    plugins.LocateControl(auto_start=True, flyTo=False, returnToPrevBounds=True, enableHighAccuracy=True, position='topright').add_to(map1)
     plugins.Fullscreen(position='topright', title='Foolish screen', title_cancel='Return to normality', force_separate_button=True).add_to(map1)
 
     #minimap_layer = folium.FeatureGroup(name="Minimap")
@@ -310,7 +309,7 @@ def foliumMap():
         cin.popup_text = popup_text
         html = folium.Html(cin.popup_text, script=True)
         popup = folium.Popup(html, max_width=2650)
-        folium.Marker([cin.lat, cin.lon], popup=popup, icon=folium.Icon(color='blue', icon='glyphicon-facetime-video')).add_to(cinema_layer)
+        folium.Marker([cin.lat, cin.lon], popup=popup, icon=folium.Icon(color='#f71e5b', icon='glyphicon-facetime-video')).add_to(cinema_layer)
 
     c.execute("SELECT a.SHOP_ID, a.NAME, a.CATEGORY, a.OPEN, a.CLOSE, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1987402.shops a")
     for row in c:
