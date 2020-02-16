@@ -70,6 +70,9 @@
             background: #4CAF50;
             cursor: pointer;
           }
+
+          :focus {outline:0 !important;}
+
           .collapsible {
             margin-bottom: 4px;
             background-color: white;
@@ -111,7 +114,7 @@
             overflow-y: auto;
             top: 130px;
             left: 30px;
-            width: 20%;
+            width: 25%;
             min-width: 100px;
             z-index: 1000;
             padding: 0 0px;
@@ -151,10 +154,23 @@
               <button form="none" class="collapsible"><h4>Cinema Facilities</h4></button>
               <!-- Facilities content -->
               <div class="content" id="facilities-div"><br>
-                  <input type="checkbox" name="facilities" value="bar"> Bar<br>
-                  <input type="checkbox" name="facilities" value="popcorn"> Popcorn<br>
-                  <input type="checkbox" name="facilities" value="access"> Wheelchair Access<br>
-                  <input type="checkbox" name="facilities" value="student"> Student Discount<br><br>
+                <div class="custom-control custom-switch">
+                  <input type="checkbox" class="custom-control-input" id="customSwitch1" name="facilities" value="bar">
+                  <label class="custom-control-label" for="customSwitch1">Bar</label>
+                </div>
+                <div class="custom-control custom-switch">
+                  <input type="checkbox" class="custom-control-input" id="customSwitch2" name="facilities" value="popcorn">
+                  <label class="custom-control-label" for="customSwitch2">Popcorn</label>
+                </div>
+                <div class="custom-control custom-switch">
+                  <input type="checkbox" class="custom-control-input" id="customSwitch3" name="facilities" value="access">
+                  <label class="custom-control-label" for="customSwitch3">Wheelchair Access</label>
+                </div>
+                <div class="custom-control custom-switch">
+                  <input type="checkbox" class="custom-control-input" id="customSwitch4" name="facilities" value="student">
+                  <label class="custom-control-label" for="customSwitch4">Student Discount</label>
+                </div>
+                <br>
               </div>
 
               <!-- 2nd Collapsible: Films -->
