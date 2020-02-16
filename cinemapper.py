@@ -147,8 +147,6 @@ def QueryBuilder(results):
 def foliumMap():
     """ Function to render the map with the query chosen """
 
-
-
     map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_control=False, zoom_start = 13)
 
     folium.TileLayer('cartodbpositron', name="CartoDB Positron", attr='Carto DB').add_to(map1)
@@ -208,22 +206,22 @@ def foliumMap():
         else:
             colour = 'orange'
         item = json.load(row[3])
-        folium.Choropleth(geo_data=item, popup="popup", line_color='orange', line_opacity=1, legend_name='Parking Areas', fill_opacity=0.3, fill_color=colour).add_to(parking_layer)
-
+        zone = folium.Choropleth(geo_data=item, line_color='orange', line_opacity=1, legend_name='Parking Areas', fill_opacity=0.3, fill_color=colour).add_to(parking_layer)
+        folium.Tooltip(text=f"Zone {zone_no} is : {park_type}", style=f"color:{colour}; font-weight:bold;", sticky=False).add_to(zone)
 
     c.execute("SELECT ogr_fid as id, naturalcom as name, sdo_util.to_geojson(ora_geometry) as jsongeometry FROM hoods_8307")
     jsons_4326 = []
     for row in c:
         id = int(row[0])
         colour = colours[(id%6)]
-        style2 = {'fillColor': '#fc7303', 'color': colour, 'weight': 2}
+        style2 = {'fillColor': '#fc7303', 'color': colour, 'weight': 3}
         name = row[1]
         item = json.load(row[2])
         jsons_4326.append(item)
         area_id = f"area{row[0]}"
         area_name = row[1]
-        folium.Choropleth(geo_data=item, name=name, popup="popup", line_color='yellow', line_opacity=1, legend_name='Edinburgh District', fill_opacity=0.6, fill_color=polycolours(id)).add_to(area_layer)
-
+        name = folium.Choropleth(geo_data=item, tooltip=area_name, line_color='yellow', line_opacity=1, legend_name='Edinburgh District', fill_opacity=0.6, fill_color=polycolours(id)).add_to(area_layer)
+        folium.Tooltip(text=area_name, style="color:red;", sticky=False).add_to(name)
 
 
     c.execute("SELECT OGR_FID, sdo_util.to_geojson(ora_geometry) as jsongeometry from busroutes_8307")
@@ -303,7 +301,7 @@ def foliumMap():
                 cinema7.films.append(this_film)
 
     for cin in cinemas_list:
-        popup_text = f"<h3>{cin.name}</h3><h5>Showing Times</h5>"
+        popup_text = f"<h3 style=\"color:#f71e5b;\">{cin.name}</h3><h5>Showing Times</h5>"
         for film in cin.films:
             popup_text += f"<tr>{film[0]}</tr><br>"
         cin.popup_text = popup_text
@@ -342,7 +340,7 @@ def foliumMap():
         popup_text = f"<h3>{name}</h3><tr><td><h5>Opening Times</h5>{formatted_open_time} to {formatted_close_time}</td></tr>"
         html = folium.Html(popup_text, script=True)
         popup = folium.Popup(html, max_width=2650)
-        folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='red', icon='glyphicon-cutlery')).add_to(restaurant_layer)
+        folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='blue', icon='glyphicon-cutlery')).add_to(restaurant_layer)
 
     c.execute(query)
     for row in c:
