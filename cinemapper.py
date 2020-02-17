@@ -125,6 +125,7 @@ def QueryBuilder(results):
     if chp3 and any([chp4 == 1, chp5 ==1, chp6==1, chp7==1]):
         var3 = ' AND '
 
+
     if chp4 and any([chp5 ==1, chp6==1, chp7==1]):
         var4 = ' AND '
 
@@ -162,7 +163,7 @@ def QueryBuilder(results):
 
     query = sql + filters
 
-    return query, results
+    return query, results, chp1, chp2, chp3, chp4, chp5, chp6, chp7
 
 
 def foliumMap():
@@ -195,7 +196,7 @@ def foliumMap():
     conn = cx_Oracle.connect(f"s0092179/{pwd}@geoslearn")
     c = conn.cursor()
 
-    query, results_layer = QueryBuilder(results_layer)
+    query, results_layer, ch1, ch2, ch3, ch4, ch5, ch6, ch7 = QueryBuilder(results_layer)
 
     c.execute("SELECT a.ogr_fid, a.\"Type\", a.\"Zone_No\", sdo_util.to_geojson(a.ora_geometry) FROM parking_8307 a")
     for row in c:
@@ -394,6 +395,17 @@ def foliumMap():
         folium.Marker(row[1:], popup=display.popup_html, icon=folium.Icon(color='purple', icon='glyphicon-ok')).add_to(results_layer)
 
     conn.close()
+
+    if ch3 == 1:
+        restaurant_layer.show = True
+    if ch4 == 1:
+        bus_layer.show = True
+    if ch5 == 1:
+        shop_layer.show = True
+    if ch6 == 1:
+        parking_layer.show = True
+    if ch7 == 1:
+        area_layer.show = True
 
     area_layer.add_to(map1)
     bus_layer.add_to(map1)
