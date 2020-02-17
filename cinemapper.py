@@ -25,7 +25,7 @@ import districts as hoods
 
 
 form = cgi.FieldStorage()
-edinburgh_coords = [55.936795,-3.220226]
+edinburgh_coords = [55.937495,-3.220226]
 
 polycolours = linear.GnBu_06.scale(0,120)
 polycolours.caption = 'Areas of Edinburgh'
@@ -55,16 +55,37 @@ def render_html():
     inpFol = foliumMap()
     print(temp.render(map=inpFol))
 
-def user_location(c, lat, lon, distance, results):
+def user_location(c, lat, lon, distance, results, cinemas_list):
     c.execute(f"SELECT c.name, c.geom.sdo_point.y, c.geom.sdo_point.x from s1434165.cinemas c where SDO_GEOM.WITHIN_DISTANCE(c.geom, {distance}, SDO_GEOMETRY('POINT({lon} {lat})', 8307), 10, 'unit=METER') = 'TRUE'")
     folium.Circle(location=[lat, lon], radius=distance, tooltip=f"Cinemas Within Radius : {distance} metres", color='#db910f', weight=5, fill=True).add_to(results)
     results.show = True
     for row in c:
-        #print(f"returned user query : {row}")
+        display = None
+        name = row[0]
         try:
-            folium.Marker(row[1:],tooltip=f"The {row[0]} cinema is less than {int(int(distance)/70)} minutes walk away",icon=folium.Icon(color='orange', icon='glyphicon-screenshot')).add_to(results)
-        except ValueError as e:
-            print("Invalid geometry or no results")
+            if name == "Omni Centre":
+                display = cinemas_list[2]
+            elif name == "Dominion":
+                display = cinemas_list[4]
+            elif name == "Cameo":
+                display = cinemas_list[5]
+            elif name == "Filmhouse":
+                display = cinemas_list[6]
+            elif name == "Odeon Lothian":
+                display = cinemas_list[3]
+            elif name == "Cineworld":
+                display = cinemas_list[0]
+            elif name == "Scotsman Filmhouse":
+                display = cinemas_list[1]
+            else:
+                continue
+        except ValueError:
+            print("No matching cinema...")
+
+        html = folium.Html(display.popup_text, script=True)
+        display.popup_html = folium.Popup(html, max_width=2650)
+        folium.Marker(row[1:],popup=display.popup_html, tooltip=f"The {row[0]} cinema is less than <emp>{int(int(distance)/70)}</emp> minutes walk away",icon=folium.Icon(color='orange', icon='glyphicon-screenshot')).add_to(results)
+
 
     return c, results
 
@@ -147,7 +168,7 @@ def QueryBuilder(results):
 def foliumMap():
     """ Function to render the map with the query chosen """
 
-    map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_control=False, zoom_start = 13)
+    map1 = folium.Map(location = edinburgh_coords, tiles='openstreetmap', zoom_control=False, zoom_start = 14)
 
     folium.TileLayer('cartodbpositron', name="CartoDB Positron", attr='Carto DB').add_to(map1)
     folium.TileLayer('cartodbdark_matter', name="CartoDB DarkMatter", attr='Carto DB').add_to(map1)
@@ -175,23 +196,6 @@ def foliumMap():
     c = conn.cursor()
 
     query, results_layer = QueryBuilder(results_layer)
-
-    # set defaults in case of errors
-    longitude = -3.183051
-    latitude = 55.948506
-    distance = 0
-
-    if "user-dist" in form:
-        distance = form.getvalue("user-dist")
-    if "lat" in form:
-        latitude = form.getvalue("lat")
-    if "lon" in form:
-        longitude = form.getvalue("lon")
-    #print(f"Name: {distance}")
-    #print(f"Lat: {latitude}")
-    #print(f"Lon: {longitude}")
-    if int(distance) > 0:
-        c, user_results_layer = user_location(c, latitude, longitude, distance, user_results_layer)
 
     c.execute("SELECT a.ogr_fid, a.\"Type\", a.\"Zone_No\", sdo_util.to_geojson(a.ora_geometry) FROM parking_8307 a")
     for row in c:
@@ -306,8 +310,27 @@ def foliumMap():
             popup_text += f"<tr>{film[0]}</tr><br>"
         cin.popup_text = popup_text
         html = folium.Html(cin.popup_text, script=True)
-        popup = folium.Popup(html, max_width=2650)
-        folium.Marker([cin.lat, cin.lon], popup=popup, icon=folium.Icon(color='#f71e5b', icon='glyphicon-facetime-video')).add_to(cinema_layer)
+        cin.popup_html = folium.Popup(html, max_width=2650)
+        cin.marker = folium.Marker([cin.lat, cin.lon], popup=cin.popup_html, icon=folium.Icon(color='#f71e5b', icon='glyphicon-facetime-video')).add_to(cinema_layer)
+
+
+    # set defaults in case of errors
+    longitude = -3.183051
+    latitude = 55.948506
+    distance = 0
+
+    if "user-dist" in form:
+        distance = form.getvalue("user-dist")
+    if "lat" in form:
+        latitude = form.getvalue("lat")
+    if "lon" in form:
+        longitude = form.getvalue("lon")
+    #print(f"Name: {distance}")
+    #print(f"Lat: {latitude}")
+    #print(f"Lon: {longitude}")
+    if int(distance) > 0:
+        c, user_results_layer = user_location(c, latitude, longitude, distance, user_results_layer, cinemas_list)
+
 
     c.execute("SELECT a.SHOP_ID, a.NAME, a.CATEGORY, a.OPEN, a.CLOSE, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1987402.shops a")
     for row in c:
@@ -320,7 +343,7 @@ def foliumMap():
         formatted_close_time = closetime
         lon = row[5]
         lat = row[6]
-        popup_text = f"<h3>{name}</h3><tr><td><h5>Opening Times</h5>{formatted_open_time}<b> to </b>{formatted_close_time}</td></tr>"
+        popup_text = f"<h3 style=\"color:#08a332;\">{name}</h3><tr><td><h5>Opening Times</h5>{formatted_open_time} to {formatted_close_time}</td></tr>"
         html = folium.Html(popup_text, script=True)
         popup = folium.Popup(html, max_width=2650)
         folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='green', icon='glyphicon-tag')).add_to(shop_layer)
@@ -337,15 +360,38 @@ def foliumMap():
         rating = row[5]
         lon = row[6]
         lat = row[7]
-        popup_text = f"<h3>{name}</h3><tr><td><h5>Opening Times</h5>{formatted_open_time} to {formatted_close_time}</td></tr>"
+        popup_text = f"<h3 style=\"color:#14a0e0;\">{name}</h3><tr><td><h5>Opening Times</h5>{formatted_open_time} to {formatted_close_time}</td></tr>"
         html = folium.Html(popup_text, script=True)
         popup = folium.Popup(html, max_width=2650)
         folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='blue', icon='glyphicon-cutlery')).add_to(restaurant_layer)
 
     c.execute(query)
     for row in c:
-        #print(row)
-        folium.Marker(row[1:],popup=row[0],icon=folium.Icon(color='purple', icon='glyphicon-ok')).add_to(results_layer)
+        display = None
+        name = row[0]
+        try:
+            if name == "Omni Centre":
+                display = cinema1
+            elif name == "Dominion":
+                display = cinema2
+            elif name == "Cameo":
+                display = cinema3
+            elif name == "Filmhouse":
+                display = cinema4
+            elif name == "Odeon Lothian":
+                display = cinema5
+            elif name == "Cineworld":
+                display = cinema6
+            elif name == "Scotsman Filmhouse":
+                display = cinema7
+            else:
+                continue
+        except ValueError:
+            print("No matching cinema...")
+
+        html = folium.Html(display.popup_text, script=True)
+        display.popup_html = folium.Popup(html, max_width=2650)
+        folium.Marker(row[1:], popup=display.popup_html, icon=folium.Icon(color='purple', icon='glyphicon-ok')).add_to(results_layer)
 
     conn.close()
 
