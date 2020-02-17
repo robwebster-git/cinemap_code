@@ -58,6 +58,7 @@ def render_html():
 def user_location(c, lat, lon, distance, results, cinemas_list):
     c.execute(f"SELECT c.name, c.geom.sdo_point.y, c.geom.sdo_point.x from s1434165.cinemas c where SDO_GEOM.WITHIN_DISTANCE(c.geom, {distance}, SDO_GEOMETRY('POINT({lon} {lat})', 8307), 10, 'unit=METER') = 'TRUE'")
     folium.Circle(location=[lat, lon], radius=distance, tooltip=f"Cinemas Within Radius : {distance} metres", color='#db910f', weight=5, fill=True).add_to(results)
+    folium.Circle(location=[lat, lon], radius=50, color='#db910f', weight=5, fill=False).add_to(results)
     results.show = True
     for row in c:
         display = None
@@ -322,14 +323,15 @@ def foliumMap():
 
     if "user-dist" in form:
         distance = form.getvalue("user-dist")
-    if "lat" in form:
-        latitude = form.getvalue("lat")
-    if "lon" in form:
-        longitude = form.getvalue("lon")
     #print(f"Name: {distance}")
     #print(f"Lat: {latitude}")
     #print(f"Lon: {longitude}")
     if int(distance) > 0:
+        if "lat" in form:
+            latitude = form.getvalue("lat")
+        if "lon" in form:
+            longitude = form.getvalue("lon")
+
         c, user_results_layer = user_location(c, latitude, longitude, distance, user_results_layer, cinemas_list)
 
 
@@ -413,8 +415,9 @@ def foliumMap():
     restaurant_layer.add_to(map1)
     parking_layer.add_to(map1)
     cinema_layer.add_to(map1)
-    results_layer.add_to(map1)
     user_results_layer.add_to(map1)
+    results_layer.add_to(map1)
+
 
 
     folium.LayerControl().add_to(map1)

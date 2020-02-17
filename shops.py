@@ -16,7 +16,7 @@ def Filter():
     'c': 'S.CATEGORY = '
     }
 
-    if choice in (None,'all'):
+    if choice in (None,'cany','nany'):
         chp = 0 # no choice
     else: # else search for it
         test_char = choice[0]
