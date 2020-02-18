@@ -57,7 +57,7 @@ def render_html():
 
 def user_location(c, lat, lon, distance, results, cinemas_list):
     c.execute(f"SELECT c.name, c.geom.sdo_point.y, c.geom.sdo_point.x from s1434165.cinemas c where SDO_GEOM.WITHIN_DISTANCE(c.geom, {distance}, SDO_GEOMETRY('POINT({lon} {lat})', 8307), 10, 'unit=METER') = 'TRUE'")
-    folium.Circle(location=[lat, lon], radius=distance, tooltip=f"Cinemas Within Radius : {distance} metres", color='#db910f', weight=5, fill=True).add_to(results)
+    folium.Circle(location=[lat, lon], radius=distance, tooltip=f"<h5>Cinemas within {distance} metres</h5>", color='#db910f', weight=5, fill=True).add_to(results)
     folium.Circle(location=[lat, lon], radius=50, color='#db910f', weight=5, fill=False).add_to(results)
     results.show = True
     for row in c:
@@ -85,8 +85,8 @@ def user_location(c, lat, lon, distance, results, cinemas_list):
 
         html = folium.Html(display.popup_text, script=True)
         display.popup_html = folium.Popup(html, max_width=2650)
-        folium.Marker(row[1:],popup=display.popup_html, tooltip=f"The {row[0]} cinema is less than <emp>{int(int(distance)/70)}</emp> minutes walk away",icon=folium.Icon(color='orange', icon='glyphicon-screenshot')).add_to(results)
-
+        folium.Marker(row[1:],popup=display.popup_html, tooltip=f"<h5>The {row[0]} cinema is less<br> than <emp>{int(int(distance)/70)}</emp> minutes walk away</h5>",icon=folium.Icon(color='orange', icon='glyphicon-screenshot')).add_to(results)
+        #display.geoclose = True
 
     return c, results
 
@@ -176,7 +176,7 @@ def foliumMap():
     folium.TileLayer('cartodbdark_matter', name="CartoDB DarkMatter", attr='Carto DB').add_to(map1)
     folium.TileLayer('stamentoner', name="Stamen Toner", attr='Stamen Toner').add_to(map1)
 
-    plugins.LocateControl(auto_start=True, flyTo=False, returnToPrevBounds=True, enableHighAccuracy=True, position='topright').add_to(map1)
+    plugins.LocateControl(auto_start=True, flyTo=False, returnToPrevBounds=True, enableHighAccuracy=False, position='topright').add_to(map1)
     plugins.Fullscreen(position='topright', title='Foolish screen', title_cancel='Return to normality', force_separate_button=True).add_to(map1)
 
     #minimap_layer = folium.FeatureGroup(name="Minimap")
@@ -184,6 +184,7 @@ def foliumMap():
     results_layer = folium.FeatureGroup(name="Results", show=results_show)
     area_layer = folium.FeatureGroup(name='Areas of Edinburgh', show=False)
     bus_layer = folium.FeatureGroup(name='Bus Routes', show=False)
+    bus_stop_layer = folium.FeatureGroup(name='Bus Stops', show=False)
     cinema_layer = folium.FeatureGroup(name='Cinemas')
     shop_layer = folium.FeatureGroup(name='Shops', show=False)
     restaurant_layer = folium.FeatureGroup(name='Restaurants', show=False)
@@ -226,7 +227,7 @@ def foliumMap():
         jsons_4326.append(item)
         area_id = f"area{row[0]}"
         area_name = row[1]
-        name = folium.Choropleth(geo_data=item, tooltip=area_name, line_color='yellow', line_opacity=1, legend_name='Edinburgh District', fill_opacity=0.6, fill_color=polycolours(id)).add_to(area_layer)
+        name = folium.Choropleth(geo_data=item, tooltip=area_name, line_color='orange', line_opacity=1, legend_name='Edinburgh District', fill_opacity=0.6, fill_color=polycolours(id)).add_to(area_layer)
         folium.Tooltip(text=area_name, style="color:red;", sticky=False).add_to(name)
 
 
@@ -235,10 +236,11 @@ def foliumMap():
         name = row[0]
         data = json.load(row[1])
         if name == 1:
-            folium.GeoJson(data, name=name, style_function = lambda x: style1).add_to(bus_layer)
+            one = folium.GeoJson(data, name=name, style_function = lambda x: style1).add_to(bus_layer)
+            folium.Popup(html="<h3 style=\"min-width: 180px; color:red;\">Bus Route 1</h3><h4 style=\"color:red;\">Leith to Comiston</h4>").add_to(one)
         if name == 2:
-            folium.GeoJson(data, name=name, style_function = lambda x: style3).add_to(bus_layer)
-
+            two = folium.GeoJson(data, name=name, style_function = lambda x: style3).add_to(bus_layer)
+            folium.Popup(html="<h3 style=\"min-width: 180px; color:blue;\">Bus Route 2</h3><h4 style=\"color:blue;\">Stockbridge to Newington</h4>").add_to(two)
 
     c.execute("SELECT UNIQUE a.CINEMA_ID, a.NAME, b.title, c.time1, c.time2, c.time3, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1434165.cinemas a, s1434165.films b, s1434165.cinefilmrelation c where c.film_id = b.film_id and c.cinema_id = a.cinema_id")
 
@@ -334,6 +336,25 @@ def foliumMap():
 
         c, user_results_layer = user_location(c, latitude, longitude, distance, user_results_layer, cinemas_list)
 
+    c.execute("SELECT p.ROUTE, p.STOP_ID, p.STOP, p.GEOM.sdo_point.x as lon, p.GEOM.sdo_point.y as lat from s1983906.bus_stops p")
+    for row in c:
+        route = row[0]
+        stop_id = row[1]
+        stop_name = row[2]
+        lon = row[3]
+        lat = row[4]
+        if route == 1:
+            popup_text = f"<h5 style=\"color:red;\">{stop_name}</h5>"
+        if route == 2:
+            popup_text = f"<h5 style=\"color:blue;\">{stop_name}</h5>"
+        html = folium.Html(popup_text, script=True)
+        popup = folium.Popup(html, max_width=2650)
+        if route == 1:
+            folium.Circle(location=[lat, lon], radius=10, tooltip=f"<h5 style=\"color:red;\">{stop_name}</h5>", color='red', weight=5, fill=True).add_to(bus_stop_layer)
+            #folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='red', icon='glyphicon-record')).add_to(bus_stop_layer)
+        if route == 2:
+            folium.Circle(location=[lat, lon], radius=10, tooltip=f"<h5 style=\"color:blue;\">{stop_name}</h5>", color='blue', weight=5, fill=True).add_to(bus_stop_layer)
+            #folium.Marker([lat, lon], popup=popup, icon=folium.Icon(color='blue', icon='glyphicon-record')).add_to(bus_stop_layer)
 
     c.execute("SELECT a.SHOP_ID, a.NAME, a.CATEGORY, a.OPEN, a.CLOSE, a.GEOM.sdo_point.x as lon, a.GEOM.sdo_point.y as lat from s1987402.shops a")
     for row in c:
@@ -395,6 +416,9 @@ def foliumMap():
         html = folium.Html(display.popup_text, script=True)
         display.popup_html = folium.Popup(html, max_width=2650)
         folium.Marker(row[1:], popup=display.popup_html, icon=folium.Icon(color='purple', icon='glyphicon-ok')).add_to(results_layer)
+    #    if display.geoclose == True:
+#            folium.Tooltip(text==f"<h5>The {display.name} cinema is less<br> than <emp>{int(int(distance)/70)}</emp> minutes walk away</h5>",icon=folium.Icon(color='orange', icon='glyphicon-screenshot')).add_to(results)
+
 
     conn.close()
 
@@ -402,6 +426,7 @@ def foliumMap():
         restaurant_layer.show = True
     if ch4 == 1:
         bus_layer.show = True
+        bus_stop_layer.show = True
     if ch5 == 1:
         shop_layer.show = True
     if ch6 == 1:
@@ -411,6 +436,7 @@ def foliumMap():
 
     area_layer.add_to(map1)
     bus_layer.add_to(map1)
+    bus_stop_layer.add_to(map1)
     shop_layer.add_to(map1)
     restaurant_layer.add_to(map1)
     parking_layer.add_to(map1)
